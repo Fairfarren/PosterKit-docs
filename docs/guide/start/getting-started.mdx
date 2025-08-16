@@ -14,9 +14,7 @@ import { PackageManagerTabs } from "/theme/index";
 
 <PackageManagerTabs command="install @stencil/react-output-target" />
 
-// App.tsx
-
-```tsx
+```tsx title=App.tsx
 import "./App.css";
 import type { CardData } from "poster-kit";
 import { KitBox } from "poster-kit/dist/react/components.ts";
@@ -53,9 +51,50 @@ export default App;
 
 <PackageManagerTabs command="install @stencil/vue-output-target" />
 
-// 入口文件 index.ts
+根据自己的框架安装包
+```ts title=rsbuild.config.ts 或 vite.config.ts
+import { defineConfig } from '@rsbuild/core'
+import { pluginVue } from '@rsbuild/plugin-vue'
+import { pluginBabel } from '@rsbuild/plugin-babel'
+import { pluginVueJsx } from '@rsbuild/plugin-vue-jsx'
 
-```ts
+export default defineConfig({
+  html: {
+    title: 'poster-kit example vue',
+  },
+  output: {
+    assetPrefix: './',
+  },
+  plugins: [
+    pluginBabel({
+      include: /\.(?:jsx|tsx)$/,
+    }),
+    pluginVue({
+      vueLoaderOptions: {
+        compilerOptions: {
+          isCustomElement: (tag) => tag.startsWith('kit-'), // 例如所有以 my- 开头的标签
+        },
+      },
+    }),
+    pluginVueJsx(),
+  ],
+})
+// 如果使用vite，请使用下面这个写法
+// import vueJsx from '@vitejs/plugin-vue-jsx'
+// plugins: [
+//   vue({
+//     template: {
+//       compilerOptions: {
+//         isCustomElement: (tag) => tag.includes('kit-'),
+//       },
+//     },
+//   }),
+//   vueJsx(),
+// ],
+```
+
+
+```ts title=入口文件 index.ts
 import { createApp } from "vue";
 import App from "./App.vue";
 import "./index.css";
@@ -67,9 +106,7 @@ const app = createApp(App);
 app.mount("#root");
 ```
 
-// App.vue
-
-```html
+```html title=App.vue
 <template>
   <div class="content">
     <div class="box">
@@ -97,7 +134,3 @@ app.mount("#root");
 ## 其他框架
 
 可以参考这里`html+js`的[例子](https://github.com/Fairfarren/PosterKit/blob/main/packages/posterKit/src/index.html)
-
-如果你使用其他框架，可以参考 [Stencil 官方文档](https://stenciljs.com) 中的 [Framework Integrations](https://stenciljs.com/docs/overview) 部分，了解如何在你的框架中使用 Poster Kit 组件。
-
-因为框架是基于`Stencil`开发，基于`Web Components 标准`，所以任何支持 Web Components 的浏览器都可以使用 Poster-Kit 组件。
