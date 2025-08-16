@@ -11,7 +11,7 @@ export default defineConfig({
   },
   builderConfig: {
     output: {
-      assetPrefix: './',
+      assetPrefix: '/PosterKit-docs/',
     }
   },
   themeConfig: {
