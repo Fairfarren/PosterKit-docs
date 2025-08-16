@@ -9,6 +9,11 @@ export default defineConfig({
     light: '/logo-light.png',
     dark: '/logo-dark.png',
   },
+  builderConfig: {
+    output: {
+      assetPrefix: './',
+    }
+  },
   themeConfig: {
     socialLinks: [
       {
