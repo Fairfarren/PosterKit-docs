@@ -9,11 +9,7 @@ export default defineConfig({
     light: '/logo-light.png',
     dark: '/logo-dark.png',
   },
-  builderConfig: {
-    output: {
-      assetPrefix: '/PosterKit-docs/',
-    }
-  },
+  base: '/PosterKit-docs/',
   themeConfig: {
     socialLinks: [
       {
