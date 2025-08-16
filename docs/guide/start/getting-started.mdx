@@ -1,0 +1,103 @@
+import { PackageManagerTabs } from "/theme/index";
+
+# 快速开始
+
+## 安装项目
+
+<PackageManagerTabs command="install poster-kit" />
+
+## React中使用
+
+[例子](https://github.com/Fairfarren/PosterKit/tree/main/example/react)
+
+需要先安装运行时
+
+<PackageManagerTabs command="install @stencil/react-output-target" />
+
+// App.tsx
+
+```tsx
+import "./App.css";
+import type { CardData } from "poster-kit";
+import { KitBox } from "poster-kit/dist/react/components.ts";
+import { type ComponentRef, useRef } from "react";
+const App = () => {
+  const kitBoxRef = useRef<ComponentRef<typeof KitBox> | null>(null);
+
+  function currentDataChange(data: CardData) {
+    console.log(data);
+  }
+
+  return (
+    <div className="content">
+      <div className="box">
+        <KitBox
+          ref={kitBoxRef}
+          width={1080}
+          height={1920}
+          onCurrentDataChange={(e) => currentDataChange(e.detail)}
+        />
+      </div>
+    </div>
+  );
+};
+
+export default App;
+```
+
+## Vue中使用
+
+[例子](https://github.com/Fairfarren/PosterKit/tree/main/example/vue)
+
+需要先安装运行时
+
+<PackageManagerTabs command="install @stencil/vue-output-target" />
+
+// 入口文件 index.ts
+
+```ts
+import { createApp } from "vue";
+import App from "./App.vue";
+import "./index.css";
+// 引入并注册组件 poster-kit
+import "poster-kit/dist/vue/index.ts";
+
+const app = createApp(App);
+
+app.mount("#root");
+```
+
+// App.vue
+
+```html
+<template>
+  <div class="content">
+    <div class="box">
+      <kit-box
+        ref="kitBoxRef"
+        :width="1080"
+        :height="1920"
+        @currentDataChange="currentDataChange"
+      />
+    </div>
+  </div>
+</template>
+<script setup lang="ts">
+  import type { CardData } from "poster-kit";
+  import { ref } from "vue";
+
+  const kitBoxRef = ref<HTMLKitBoxElement | null>(null);
+
+  function currentDataChange(e: CustomEvent<CardData>) {
+    console.log(e.detail);
+  }
+</script>
+```
+
+## 其他框架
+
+可以参考这里`html+js`的[例子](https://github.com/Fairfarren/PosterKit/blob/main/packages/posterKit/src/index.html)
+
+如果你使用其他框架，可以参考 [Stencil 官方文档](https://stenciljs.com) 中的 [Framework Integrations](https://stenciljs.com/docs/overview) 部分，了解如何在你的框架中使用 Poster Kit 组件。
+
+因为框架是基于`Stencil`开发，基于`Web Components 标准`，所以任何支持 Web Components 的浏览器都可以使用 Poster-Kit 组件。

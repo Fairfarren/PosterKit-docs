@@ -1,0 +1,23 @@
+{
+  "name": "docs",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "build": "rspress build",
+    "dev": "rspress dev",
+    "preview": "rspress preview",
+    "format": "prettier --write docs/"
+  },
+  "dependencies": {
+    "rspress": "^1.40.2"
+  },
+  "devDependencies": {
+    "@types/mdx": "^2.0.13",
+    "@types/node": "^18.11.17",
+    "prettier": "^3.6.2",
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}

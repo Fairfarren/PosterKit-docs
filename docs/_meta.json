@@ -1,0 +1,14 @@
+[
+  {
+    "text": "文档",
+    "label": "文档",
+    "link": "/guide/start/introduction",
+    "activeMatch": "/guide/start"
+  },
+  {
+    "text": "API",
+    "label": "API",
+    "link": "/guide/apis/init",
+    "activeMatch": "/guide/apis"
+  }
+]

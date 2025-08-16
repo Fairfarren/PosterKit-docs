@@ -1,0 +1,73 @@
+# 初始化
+
+## init()
+
+```tsx
+kitBoxRef.init([] as CardData[])
+```
+
+### CardData
+
+`init`方法接受一个数组，类型为`CardData[]`
+
+|key|type|value|
+|---|---|---|
+|id|string|id，唯一字段|
+|width|number|卡片宽度|
+|height|number|卡片高度|
+|x|number|卡片在kitBox中的x坐标|
+|y|number|卡片在kitBox中的y坐标|
+|type|'image' \| 'text'|卡片类型，分为图片和文字|
+|image|HTMLImageElement|当`type`为`image`时，必填，图片对象|
+|text|string|当`type`为`text`时，必填，文字内容|
+|fontSize|number|当`type`为`text`时，必填，文字大小|
+|fontFamily|string|当`type`为`text`时，必填，文字字体|
+|color|string|当`type`为`text`时，必填，文字颜色，可以使用|
+|fontWeight|string|当`type`为`text`时，必填，文字粗细，支持`normal`和`bold`|
+|fontStyle|'normal' \| 'italic'|当`type`为`text`时，必填，文字样式，支持`normal`和`italic`|
+|decoration|'none' \| 'underline' \| 'line-through'|当`type`为`text`时，必填，文字装饰，支持`none`、`underline`和`line-through`|
+
+## 示例
+
+```tsx
+<kitBox
+  ref={kitBoxRef}
+/>
+```
+
+```tsx
+const image = new Image()
+image.src =
+  'https://material-center.meitudata.com/material/image/62fa22ac354485399.png'
+image.crossOrigin = 'anonymous'
+
+kitBoxRef.current.init([
+    {
+      id: new Date().getTime() + 1,
+      width: 300,
+      height: 200,
+      x: 0,
+      y: 0,
+      text: '你好世界你好世界1234567890🤔abcdefghijklmnopqrstuvwxyz',
+      type: 'text',
+      fontSize: 32,
+      fontFamily: 'cursive',
+      color: '#db3f9178',
+      fontWeight: 'bold',
+      fontStyle: 'italic',
+      decoration: 'line-through',
+    },
+    {
+      id: new Date().getTime(),
+      width: 300,
+      height: 300,
+      x: 0,
+      y: 0,
+      image,
+      type: 'image',
+    }
+])
+```
+
+## 注意
+如果`type`为`iamge`时，字段`image`必须是一个`Image`对象。
