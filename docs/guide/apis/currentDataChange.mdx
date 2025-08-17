@@ -9,8 +9,14 @@ currentDataChange: (e: CustomEvent<CardData>) => void
 ### [CardData](./type)
 
 ## 示例
-```tsx
+```tsx title=react的监听
 <kitBox onCurrentDataChange={(e) => e.detail}>
 </kitBox>
+```
+
+```html title=vue的监听
+<kit-box
+  @currentDataChange="currentDataChange"
+/>
 ```
 
