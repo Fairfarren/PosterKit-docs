@@ -7,6 +7,7 @@ interface BaseOptions {
   height: number
   x: number
   y: number
+  isLock?: boolean
 }
 
 type CardData =
@@ -53,6 +54,11 @@ type CardData =
   - Type: `number`
   - Required: `true`
   - Description: 卡片在`kitBox`中的y坐标，单位为像素
+
+- isLock
+  - Type: `boolean`
+  - Required: `false`
+  - Description: 是否锁定卡片比例
 
 - type
   - Type: `'image' | 'text'`
