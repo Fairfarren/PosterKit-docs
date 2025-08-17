@@ -1,1 +1,39 @@
 # 插入元素
+
+## add()
+
+`init`方法接受一个对象，类型为`CardData`
+
+```tsx
+kitBoxRef.add({} as CardData)
+```
+
+
+### [CardData](./type)
+
+
+## 示例
+
+```tsx
+<kitBox
+  ref={kitBoxRef}
+/>
+```
+
+```tsx
+kitBoxRef.current?.add({
+  id: new Date().getTime() + 1,
+  width: 300,
+  height: 200,
+  x: 0,
+  y: 0,
+  text: '你好世界你好世界1234567890🤔abcdefghijklmnopqrstuvwxyz',
+  type: 'text',
+  fontSize: 32,
+  fontFamily: 'cursive',
+  color: '#db3f9178',
+  fontWeight: 'bold',
+  fontStyle: 'italic',
+  decoration: 'line-through'
+})
+```

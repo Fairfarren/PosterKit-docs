@@ -26,3 +26,62 @@ type CardData =
     })
 
 ```
+
+## CardData
+
+### id
+
+- Type: `string`
+- Description: 卡片的唯一标识符，建议使用UUID。
+
+### width
+- Type: `number`
+- Description: 卡片的宽度，单位为像素。
+
+### height
+- Type: `number`
+- Description: 卡片的高度，单位为像素。
+
+### x
+- Type: `number`
+- Description: 卡片在`kitBox`中的x坐标，单位为像素
+
+### y
+- Type: `number`
+- Description: 卡片在`kitBox`中的y坐标，单位为像素
+
+### type
+- Type: `'image' | 'text'`
+- Description: 卡片的类型，分为图片和文字。
+
+### image
+- Type: `HTMLImageElement`
+- Description: 当`type`为`image`时，必填，图片对象。
+
+### text
+- Type: `string`
+- Description: 当`type`为`text`时，必填，文字内容。
+
+### fontSize
+- Type: `number`
+- Description: 当`type`为`text`时，必填，文字大小，单位为像素。
+
+### fontFamily
+- Type: `string`
+- Description: 当`type`为`text`时，可选，文字字体，可以是系统字体或自定义字体。
+
+### color
+- Type: `string`
+- Description: 当`type`为`text`时，可选，文字颜色，可以使用十六进制颜色值或RGB颜色值。
+
+### fontWeight
+- Type: `string`
+- Description: 当`type`为`text`时，可选，文字粗细，支持`normal`和`bold`。
+
+### fontStyle
+- Type: `'normal' | 'italic'`
+- Description: 当`type`为`text`时，可选，文字样式，支持`normal`和`italic`。
+
+### decoration
+- Type: `'none' | 'underline' | 'line-through'`
+- Description: 当`type`为`text`时，可选，文字装饰，支持`none`、`underline`和`line-through`。
