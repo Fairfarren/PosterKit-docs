@@ -1,0 +1,41 @@
+# 创建预览区
+
+## KitBox
+
+- width
+  - Type: `number`
+  - Required: `true`
+  - Description: 预览区的宽度，单位为像素。
+- height
+  - Type: `number`
+  - Required: `true`
+  - Description: 预览区的高度，单位为像素。
+- onCurrentDataChange
+  - Type: `(e: CustomEvent<CardData>) => void`
+  - Required: `false`
+  - Description: 当当前卡片数据发生变化时触发的事件，返回一个`CustomEvent<CardData>`对象，包含当前卡片数据。
+
+## 示例
+
+```tsx
+import { KitBox } from 'poster-kit/dist/react/components.ts'
+import type { CardData } from 'poster-kit'
+import { useRef, type ComponentRef } from 'react'
+
+const App = () => {
+  const kitBoxRef = useRef<ComponentRef<typeof KitBox> | null>(null)
+
+  function currentDataChange(data: CardData) {
+    console.log('当前数据:', data)
+  }
+
+  return <div className="box">
+    <KitBox
+      ref={kitBoxRef}
+      width={1080}
+      height={1920}
+      onCurrentDataChange={(e) => currentDataChange(e.detail)}
+    />
+  </div>
+}
+```
