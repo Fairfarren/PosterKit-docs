@@ -31,13 +31,13 @@ features:
     icon: 🎨
   - title: 📐 智能缩放适配
     details: 预览区域自动适配容器尺寸，智能计算缩放比例，确保最佳显示效果
-    icon: �
+    icon:  📐
   - title: 📡 实时事件通信
     details: 通过标准化事件系统实时同步数据变化，轻松集成外部状态管理
-    icon: �
+    icon:  📡
   - title: 🔄 跨框架兼容
     details: 原生 Web Components + React/Vue 适配层，真正的框架无关性
-    icon: �
+    icon:  🔄
   - title: ⚡ 轻量高性能
     details: 基于 Stencil 构建，按需加载，生产包体积小，运行性能优异
     icon: ⚡
