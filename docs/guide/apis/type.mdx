@@ -1,106 +1,308 @@
-# TypeScript类型
+# TypeScript 类型定义
+
+PosterKit 提供完整的 TypeScript 类型支持，确保开发过程中的类型安全。
+
+## 核心类型
 
 ```ts
+// 基础卡片属性
 interface BaseOptions {
-  id: string
-  width: number
-  height: number
-  x: number
-  y: number
-  isLock?: boolean
+  id: string;
+  width: number;
+  height: number;
+  x: number;
+  y: number;
+  isLock?: boolean;
 }
 
+// 卡片类型枚举
+type CardType = 'image' | 'text';
+
+// 联合类型定义，确保类型安全
 type CardData =
   | (BaseOptions & {
-      type: 'image'
-      image: HTMLImageElement
-    })
+      type: 'image';
+    } & ({ image: HTMLImageElement } | { src: string }))
   | (BaseOptions & {
-      type: 'text'
-      text: string
-      fontSize: number
-      fontFamily: string
-      color: string
-      fontWeight: string
-      fontStyle: 'normal' | 'italic'
-      decoration: 'none' | 'underline' | 'line-through'
-    })
-
+      type: 'text';
+      text: string;
+      fontSize: number;
+      fontFamily: string;
+      color: string;
+      fontWeight: string;
+      fontStyle: 'normal' | 'italic';
+      decoration: 'none' | 'underline' | 'line-through';
+    });
 ```
 
-## CardData
+## 详细说明
 
-- id
-  - Type: `string`
-  - Required: `true`
-  - Description: 卡片的唯一标识符，建议使用UUID。
+### BaseOptions
 
-- width
-  - Type: `number`
-  - Required: `true`
-  - Description: 卡片的宽度，单位为像素。
+所有卡片共享的基础属性：
 
-- height
-  - Type: `number`
-  - Required: `true`
-  - Description: 卡片的高度，单位为像素。
+- **id**
+  - 类型: `string`
+  - 必填: ✅
+  - 说明: 卡片的唯一标识符，建议使用 UUID 或时间戳
 
-- x
-  - Type: `number`
-  - Required: `true`
-  - Description: 卡片在`kitBox`中的x坐标，单位为像素
+- **width**
+  - 类型: `number`
+  - 必填: ✅
+  - 说明: 卡片宽度，单位为像素
 
-- y
-  - Type: `number`
-  - Required: `true`
-  - Description: 卡片在`kitBox`中的y坐标，单位为像素
+- **height**
+  - 类型: `number`
+  - 必填: ✅
+  - 说明: 卡片高度，单位为像素
 
-- isLock
-  - Type: `boolean`
-  - Required: `false`
-  - Description: 是否锁定卡片比例
+- **x**
+  - 类型: `number`
+  - 必填: ✅
+  - 说明: 卡片在画布中的 X 坐标，单位为像素
 
-- type
-  - Type: `'image' | 'text'`
-  - Required: `true`
-  - Description: 卡片的类型，分为图片和文字。
+- **y**
+  - 类型: `number`
+  - 必填: ✅
+  - 说明: 卡片在画布中的 Y 坐标，单位为像素
 
-- image
-  - Type: `HTMLImageElement`
-  - Required: `true` when `type` is `image`
-  - Description: 当`type`为`image`时，必填，图片对象。
+- **isLock**
+  - 类型: `boolean`
+  - 必填: ❌
+  - 默认值: `false`
+  - 说明: 是否锁定卡片，锁定后无法编辑
 
-- text
-  - Type: `string`
-  - Required: `true` when `type` is `text`
-  - Description: 当`type`为`text`时，必填，文字内容。
+### 图片卡片 (ImageCard)
 
-- fontSize
-  - Type: `number`
-  - Required: `false`
-  - Description: 当`type`为`text`时，必填，文字大小，单位为像素。
+当 `type: 'image'` 时的特有属性：
 
-- fontFamily
-  - Type: `string`
-  - Required: `false`
-  - Description: 当`type`为`text`时，可选，文字字体，可以是系统字体或自定义字体。
+- **type**
+  - 类型: `'image'`
+  - 必填: ✅
+  - 说明: 标识这是一个图片卡片
 
-- color
-  - Type: `string`
-  - Required: `false`
-  - Description: 当`type`为`text`时，可选，文字颜色，可以使用十六进制颜色值或RGB颜色值。
+- **image** (方式一)
+  - 类型: `HTMLImageElement`
+  - 必填: ✅ (二选一)
+  - 说明: 图片元素对象，适用于动态加载的图片
 
-- fontWeight
-  - Type: `string`
-  - Required: `false`
-  - Description: 当`type`为`text`时，可选，文字粗细，支持`normal`和`bold`。
+- **src** (方式二)
+  - 类型: `string`
+  - 必填: ✅ (二选一)
+  - 说明: 图片URL地址，适用于静态图片
 
-- fontStyle
-  - Type: `'normal' | 'italic'`
-  - Required: `false`
-  - Description: 当`type`为`text`时，可选，文字样式，支持`normal`和`italic`。
+### 文本卡片 (TextCard)
 
-- decoration
-  - Type: `'none' | 'underline' | 'line-through'`
-  - Required: `false`
-  - Description: 当`type`为`text`时，可选，文字装饰，支持`none`、`underline`和`line-through`。
+当 `type: 'text'` 时的特有属性：
+
+- **type**
+  - 类型: `'text'`
+  - 必填: ✅
+  - 说明: 标识这是一个文本卡片
+
+- **text**
+  - 类型: `string`
+  - 必填: ✅
+  - 说明: 文本内容，支持多行文本
+
+- **fontSize**
+  - 类型: `number`
+  - 必填: ✅
+  - 说明: 字体大小，单位为像素
+
+- **fontFamily**
+  - 类型: `string`
+  - 必填: ✅
+  - 说明: 字体族名称，如 'Arial', 'Microsoft YaHei'
+
+- **color**
+  - 类型: `string`
+  - 必填: ✅
+  - 说明: 文字颜色，支持十六进制、RGB、HSL 等格式
+
+- **fontWeight**
+  - 类型: `string`
+  - 必填: ✅
+  - 说明: 字体粗细，如 'normal', 'bold', '400', '700'
+
+- **fontStyle**
+  - 类型: `'normal' | 'italic'`
+  - 必填: ✅
+  - 说明: 字体样式，正常或斜体
+
+- **decoration**
+  - 类型: `'none' | 'underline' | 'line-through'`
+  - 必填: ✅
+  - 说明: 文字装饰，无装饰、下划线或删除线
+
+## 使用示例
+
+### 创建图片卡片
+
+```ts
+// 方式一：使用 HTMLImageElement
+const imageCard: CardData = {
+  id: 'img-001',
+  type: 'image',
+  x: 100,
+  y: 100,
+  width: 300,
+  height: 200,
+  image: document.querySelector('#my-image') as HTMLImageElement,
+};
+
+// 方式二：使用图片 URL
+const imageCard2: CardData = {
+  id: 'img-002',
+  type: 'image',
+  x: 200,
+  y: 200,
+  width: 400,
+  height: 300,
+  src: 'https://example.com/image.jpg',
+};
+```
+
+### 创建文本卡片
+
+```ts
+const textCard: CardData = {
+  id: 'text-001',
+  type: 'text',
+  x: 50,
+  y: 50,
+  width: 300,
+  height: 100,
+  text: '这是一段示例文本
+支持多行显示',
+  fontSize: 24,
+  fontFamily: 'Microsoft YaHei, sans-serif',
+  color: '#333333',
+  fontWeight: 'bold',
+  fontStyle: 'normal',
+  decoration: 'none',
+  isLock: false
+}
+```
+
+### 类型守卫
+
+使用类型守卫来安全地处理不同类型的卡片：
+
+```ts
+function handleCard(card: CardData) {
+  if (card.type === 'image') {
+    // TypeScript 会自动推断 card 为图片卡片类型
+    console.log('图片尺寸:', card.width, 'x', card.height);
+
+    if ('src' in card) {
+      console.log('图片地址:', card.src);
+    } else {
+      console.log('图片元素:', card.image);
+    }
+  } else if (card.type === 'text') {
+    // TypeScript 会自动推断 card 为文本卡片类型
+    console.log('文本内容:', card.text);
+    console.log('字体大小:', card.fontSize);
+    console.log('字体颜色:', card.color);
+  }
+}
+```
+
+## 组件接口类型
+
+### KitBox 组件属性
+
+```ts
+interface KitBoxProps {
+  width: number; // 画布宽度
+  height: number; // 画布高度
+  onCurrentDataChange?: (event: CustomEvent<CardData>) => void;
+}
+```
+
+### KitBox 组件方法
+
+```ts
+interface KitBoxMethods {
+  init(list?: CardData[]): Promise<void>;
+  add(data: CardData): Promise<void>;
+  getDomList(): Promise<CardData[]>;
+  updateCurrentData(data: CardData): Promise<void>;
+  createPoster(): Promise<HTMLCanvasElement>;
+}
+```
+
+## 事件类型
+
+### 数据变更事件
+
+```ts
+// 当前选中卡片变更事件
+interface CurrentDataChangeEvent extends CustomEvent {
+  detail: CardData;
+}
+
+// 卡片操作事件
+interface CardOperationEvent extends CustomEvent {
+  detail: {
+    type: 'move' | 'resize' | 'delete' | 'layer-up' | 'layer-down';
+    cardData: CardData;
+  };
+}
+```
+
+## 高级类型
+
+### 卡片工厂函数
+
+```ts
+// 创建图片卡片的工厂函数
+function createImageCard(
+  id: string,
+  src: string,
+  position: { x: number; y: number },
+  size: { width: number; height: number },
+): Extract<CardData, { type: 'image' }> {
+  return {
+    id,
+    type: 'image',
+    src,
+    x: position.x,
+    y: position.y,
+    width: size.width,
+    height: size.height,
+  };
+}
+
+// 创建文本卡片的工厂函数
+function createTextCard(
+  id: string,
+  text: string,
+  position: { x: number; y: number },
+  style: {
+    fontSize: number;
+    fontFamily: string;
+    color: string;
+    fontWeight?: string;
+    fontStyle?: 'normal' | 'italic';
+    decoration?: 'none' | 'underline' | 'line-through';
+  },
+): Extract<CardData, { type: 'text' }> {
+  return {
+    id,
+    type: 'text',
+    text,
+    x: position.x,
+    y: position.y,
+    width: 300, // 默认宽度
+    height: 100, // 默认高度
+    fontSize: style.fontSize,
+    fontFamily: style.fontFamily,
+    color: style.color,
+    fontWeight: style.fontWeight || 'normal',
+    fontStyle: style.fontStyle || 'normal',
+    decoration: style.decoration || 'none',
+  };
+}
+```

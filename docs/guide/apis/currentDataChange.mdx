@@ -1,22 +1,258 @@
-# 选中卡片更新回调
+# 数据变更事件 current-data-change
 
-## currentDataChange()
+`current-data-change` 事件在用户选中、编辑或操作卡片时触发，用于向外部传递当前选中卡片的数据变化。
+
+## 事件详情
+
+- **事件名称**: `current-data-change` (kebab-case) / `currentDataChange` (camelCase)
+- **事件类型**: `CustomEvent<CardData>`
+- **触发时机**: 卡片选中、拖拽、缩放、属性变更时
+- **数据格式**: 事件的 `detail` 属性包含完整的 `CardData` 对象
+
+## 监听方式
+
+### React 中监听
+
+```tsx
+import { KitBox } from 'poster-kit/dist/react/components.ts';
+import type { CardData } from 'poster-kit';
+
+const PosterEditor = () => {
+  const handleDataChange = (e: CustomEvent<CardData>) => {
+    const cardData = e.detail;
+    console.log('选中卡片数据:', cardData);
+
+    // 更新外部状态
+    setCurrentCard(cardData);
+
+    // 保存到本地存储
+    localStorage.setItem('current-card', JSON.stringify(cardData));
+  };
+
+  return (
+    <KitBox width={1080} height={1920} onCurrentDataChange={handleDataChange} />
+  );
+};
+```
+
+### Vue 中监听
+
+```vue
+<template>
+  <kit-box
+    :width="1080"
+    :height="1920"
+    @current-data-change="handleDataChange"
+  />
+</template>
+
+<script setup lang="ts">
+import type { CardData } from 'poster-kit';
+import { ref } from 'vue';
+
+const currentCard = ref<CardData | null>(null);
+
+function handleDataChange(e: CustomEvent<CardData>) {
+  const cardData = e.detail;
+  console.log('选中卡片数据:', cardData);
+
+  // 更新响应式数据
+  currentCard.value = cardData;
+
+  // 触发其他业务逻辑
+  updatePropertyPanel(cardData);
+}
+
+function updatePropertyPanel(cardData: CardData) {
+  // 根据卡片类型更新属性面板
+  if (cardData.type === 'text') {
+    console.log('文本卡片:', cardData.text);
+  } else if (cardData.type === 'image') {
+    console.log('图片卡片:', cardData.width, 'x', cardData.height);
+  }
+}
+</script>
+```
+
+### 原生 JavaScript 中监听
+
+```html
+<kit-box id="poster-editor" width="1080" height="1920"></kit-box>
+
+<script>
+  const kitBox = document.getElementById('poster-editor');
+
+  // 方式一：使用 addEventListener
+  kitBox.addEventListener('current-data-change', (e) => {
+    const cardData = e.detail;
+    console.log('选中卡片:', cardData);
+
+    // 更新界面
+    updateUI(cardData);
+  });
+
+  // 方式二：使用属性绑定（需要转换为camelCase）
+  kitBox.addEventListener('currentDataChange', (e) => {
+    console.log('卡片数据变更:', e.detail);
+  });
+
+  function updateUI(cardData) {
+    // 更新属性面板
+    const panel = document.getElementById('property-panel');
+    panel.innerHTML = \`
+      <h3>卡片属性</h3>
+      <p>ID: \${cardData.id}</p>
+      <p>类型: \${cardData.type}</p>
+      <p>位置: (\${cardData.x}, \${cardData.y})</p>
+      <p>尺寸: \${cardData.width} × \${cardData.height}</p>
+    \`;
+
+    // 根据类型显示不同信息
+    if (cardData.type === 'text') {
+      panel.innerHTML += \`
+        <p>文本: \${cardData.text}</p>
+        <p>字号: \${cardData.fontSize}px</p>
+        <p>颜色: \${cardData.color}</p>
+      \`;
+    }
+  }
+</script>
+```
+
+## 事件数据结构
+
+事件的 `detail` 属性包含完整的 `CardData` 对象：
 
 ```ts
-currentDataChange: (e: CustomEvent<CardData>) => void
+// 文本卡片事件数据示例
+{
+  id: "text-1672531200000",
+  type: "text",
+  text: "示例文本内容",
+  x: 100,
+  y: 150,
+  width: 300,
+  height: 80,
+  fontSize: 24,
+  fontFamily: "Microsoft YaHei, sans-serif",
+  color: "#333333",
+  fontWeight: "bold",
+  fontStyle: "normal",
+  decoration: "none",
+  isLock: false
+}
+
+// 图片卡片事件数据示例
+{
+  id: "image-1672531200001",
+  type: "image",
+  src: "https://example.com/image.jpg",
+  x: 200,
+  y: 300,
+  width: 400,
+  height: 300,
+  isLock: false
+}
 ```
 
-### [CardData](./type)
+## 使用场景
 
-## 示例
-```tsx title=react的监听
-<kitBox onCurrentDataChange={(e) => e.detail}>
-</kitBox>
+### 1. 属性面板同步
+
+```tsx
+const PropertyPanel = () => {
+  const [currentCard, setCurrentCard] = useState<CardData | null>(null);
+
+  const handleDataChange = (e: CustomEvent<CardData>) => {
+    setCurrentCard(e.detail);
+  };
+
+  return (
+    <div className="property-panel">
+      <KitBox onCurrentDataChange={handleDataChange} />
+
+      {currentCard && (
+        <div className="properties">
+          <h3>属性编辑</h3>
+
+          <div className="property-group">
+            <label>X 坐标</label>
+            <input
+              type="number"
+              value={currentCard.x}
+              onChange={(e) => updateCardProperty('x', Number(e.target.value))}
+            />
+          </div>
+
+          <div className="property-group">
+            <label>Y 坐标</label>
+            <input
+              type="number"
+              value={currentCard.y}
+              onChange={(e) => updateCardProperty('y', Number(e.target.value))}
+            />
+          </div>
+
+          {currentCard.type === 'text' && (
+            <>
+              <div className="property-group">
+                <label>文本内容</label>
+                <textarea
+                  value={currentCard.text}
+                  onChange={(e) => updateCardProperty('text', e.target.value)}
+                />
+              </div>
+
+              <div className="property-group">
+                <label>字体大小</label>
+                <input
+                  type="number"
+                  value={currentCard.fontSize}
+                  onChange={(e) =>
+                    updateCardProperty('fontSize', Number(e.target.value))
+                  }
+                />
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
 ```
 
-```html title=vue的监听
-<kit-box
-  @currentDataChange="currentDataChange"
-/>
+### 2. 数据持久化
+
+```ts
+// 自动保存到本地存储
+const handleDataChange = (e: CustomEvent<CardData>) => {
+  const cardData = e.detail;
+
+  // 保存当前选中卡片
+  localStorage.setItem('current-card', JSON.stringify(cardData));
+
+  // 更新整个画布数据
+  savePosterData();
+};
+
+const savePosterData = async () => {
+  try {
+    const allCards = await kitBoxRef.current?.getDomList();
+    if (allCards) {
+      localStorage.setItem('poster-data', JSON.stringify(allCards));
+
+      // 可选：上传到服务器
+      await uploadToServer(allCards);
+    }
+  } catch (error) {
+    console.error('保存失败:', error);
+  }
+};
 ```
 
+## 相关 API
+
+- [`updateCurrentData()`](./updateCurrentData) - 主动更新卡片数据
+- [`add()`](./add) - 添加新卡片
+- [`getDomList()`](./getDomList) - 获取所有卡片数据

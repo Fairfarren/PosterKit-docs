@@ -1,58 +1,331 @@
-# 初始化
+# 初始化方法 init()
 
-## init()
+`init()` 方法用于初始化 PosterKit 编辑器，可以预加载一批卡片数据到画布中。
 
-如果没有参数需要初始化可不执行
+## 方法签名
 
-`init`方法接受一个数组，类型为`CardData[]`
-
-```tsx
-kitBoxRef.init([] as CardData[])
+```ts
+async init(list?: CardData[]): Promise<void>
 ```
 
-### [CardData](./type)
+## 参数说明
 
-## 示例
+- **list** (可选)
+  - 类型: `CardData[]`
+  - 默认值: `[]`
+  - 说明: 要初始化的卡片数据数组，如果不传则初始化为空画布
 
-```tsx
-<kitBox
-  ref={kitBoxRef}
-/>
+## 使用场景
+
+### 1. 空画布初始化
+
+如果不需要预置内容，可以不传参数或传入空数组：
+
+```ts
+// 方式一：不传参数
+await kitBoxRef.current?.init();
+
+// 方式二：传入空数组
+await kitBoxRef.current?.init([]);
 ```
 
-```tsx
-const image = new Image()
-image.src =
-  'https://material-center.meitudata.com/material/image/62fa22ac354485399.png'
-image.crossOrigin = 'anonymous'
+### 2. 预置内容初始化
 
-kitBoxRef.current.init([
-    {
-      id: new Date().getTime() + 1,
-      width: 300,
-      height: 200,
-      x: 0,
-      y: 0,
-      text: '你好世界你好世界1234567890🤔abcdefghijklmnopqrstuvwxyz',
-      type: 'text',
-      fontSize: 32,
-      fontFamily: 'cursive',
-      color: '#db3f9178',
-      fontWeight: 'bold',
-      fontStyle: 'italic',
-      decoration: 'line-through',
-    },
-    {
-      id: new Date().getTime(),
-      width: 300,
-      height: 300,
-      x: 0,
-      y: 0,
-      image,
-      type: 'image',
+从模板或保存的数据中恢复画布内容：
+
+```ts
+const templateData: CardData[] = [
+  {
+    id: 'text-title',
+    type: 'text',
+    text: '商品促销海报',
+    x: 100,
+    y: 50,
+    width: 880,
+    height: 120,
+    fontSize: 48,
+    fontFamily: 'Microsoft YaHei, sans-serif',
+    color: '#ff4757',
+    fontWeight: 'bold',
+    fontStyle: 'normal',
+    decoration: 'none',
+  },
+  {
+    id: 'product-image',
+    type: 'image',
+    src: 'https://example.com/product.jpg',
+    x: 200,
+    y: 200,
+    width: 680,
+    height: 680,
+  },
+];
+
+await kitBoxRef.current?.init(templateData);
+```
+
+## 完整示例
+
+### React 中使用
+
+```tsx
+import { useRef, useEffect } from 'react';
+import { KitBox } from 'poster-kit/dist/react/components.ts';
+import type { CardData } from 'poster-kit';
+
+const PosterEditor = () => {
+  const kitBoxRef = useRef<ComponentRef<typeof KitBox>>(null);
+
+  // 组件挂载后初始化
+  useEffect(() => {
+    const initEditor = async () => {
+      const savedData = localStorage.getItem('poster-data');
+
+      if (savedData) {
+        // 从本地存储恢复数据
+        const cardList: CardData[] = JSON.parse(savedData);
+        await kitBoxRef.current?.init(cardList);
+      } else {
+        // 使用默认模板
+        await initWithTemplate();
+      }
+    };
+
+    initEditor();
+  }, []);
+
+  const initWithTemplate = async () => {
+    const templateCards: CardData[] = [
+      {
+        id: 'bg-text',
+        type: 'text',
+        text: '点击编辑文字',
+        x: 50,
+        y: 100,
+        width: 980,
+        height: 80,
+        fontSize: 36,
+        fontFamily: 'Arial, sans-serif',
+        color: '#333333',
+        fontWeight: 'normal',
+        fontStyle: 'normal',
+        decoration: 'none',
+      },
+    ];
+
+    await kitBoxRef.current?.init(templateCards);
+  };
+
+  return <KitBox ref={kitBoxRef} width={1080} height={1920} />;
+};
+```
+
+### Vue 中使用
+
+```vue
+<template>
+  <kit-box ref="kitBoxRef" :width="1080" :height="1920" />
+</template>
+
+<script setup lang="ts">
+import { ref, onMounted } from 'vue';
+import type { CardData } from 'poster-kit';
+
+const kitBoxRef = ref<HTMLKitBoxElement | null>(null);
+
+onMounted(async () => {
+  // 模拟从API获取数据
+  const apiData = await fetchPosterData();
+
+  if (apiData && apiData.length > 0) {
+    await kitBoxRef.value?.init(apiData);
+  } else {
+    // 初始化为空画布
+    await kitBoxRef.value?.init();
+  }
+});
+
+async function fetchPosterData(): Promise<CardData[]> {
+  // 模拟API调用
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve([
+        {
+          id: 'welcome-text',
+          type: 'text',
+          text: '欢迎使用 PosterKit',
+          x: 100,
+          y: 200,
+          width: 880,
+          height: 100,
+          fontSize: 42,
+          fontFamily: 'Microsoft YaHei',
+          color: '#2c3e50',
+          fontWeight: 'bold',
+          fontStyle: 'normal',
+          decoration: 'none',
+        },
+      ]);
+    }, 1000);
+  });
+}
+</script>
+```
+
+### 原生 JavaScript 使用
+
+```html
+<kit-box id="poster-editor" width="1080" height="1920"></kit-box>
+
+<script>
+  document.addEventListener('DOMContentLoaded', async () => {
+    const kitBox = document.getElementById('poster-editor');
+
+    // 创建示例数据
+    const sampleData = [
+      {
+        id: 'header-text',
+        type: 'text',
+        text: '2024 新年促销',
+        x: 50,
+        y: 50,
+        width: 980,
+        height: 100,
+        fontSize: 48,
+        fontFamily: 'Microsoft YaHei, sans-serif',
+        color: '#e74c3c',
+        fontWeight: 'bold',
+        fontStyle: 'normal',
+        decoration: 'none',
+      },
+      {
+        id: 'product-showcase',
+        type: 'image',
+        src: '/images/product-banner.jpg',
+        x: 100,
+        y: 200,
+        width: 880,
+        height: 600,
+      },
+    ];
+
+    // 初始化编辑器
+    await kitBox.init(sampleData);
+
+    console.log('编辑器初始化完成');
+  });
+</script>
+```
+
+## 注意事项
+
+### 1. 图片加载处理
+
+当初始化数据中包含图片卡片时，需要确保图片能够正常加载：
+
+```ts
+const initWithImages = async () => {
+  // 预加载图片
+  const loadImage = (src: string): Promise<HTMLImageElement> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous'; // 处理跨域
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = src;
+    });
+  };
+
+  try {
+    const image1 = await loadImage('https://example.com/image1.jpg');
+    const image2 = await loadImage('https://example.com/image2.jpg');
+
+    const cards: CardData[] = [
+      {
+        id: 'img-1',
+        type: 'image',
+        image: image1,
+        x: 100,
+        y: 100,
+        width: 300,
+        height: 200,
+      },
+      {
+        id: 'img-2',
+        type: 'image',
+        image: image2,
+        x: 500,
+        y: 100,
+        width: 400,
+        height: 300,
+      },
+    ];
+
+    await kitBoxRef.current?.init(cards);
+  } catch (error) {
+    console.error('图片加载失败:', error);
+    // 降级到空画布
+    await kitBoxRef.current?.init();
+  }
+};
+```
+
+### 2. 数据验证
+
+建议在初始化前验证数据格式：
+
+```ts
+function validateCardData(data: any[]): CardData[] {
+  return data.filter((item) => {
+    // 基础字段验证
+    if (
+      !item.id ||
+      typeof item.width !== 'number' ||
+      typeof item.height !== 'number'
+    ) {
+      console.warn('无效的卡片数据:', item);
+      return false;
     }
-])
+
+    // 类型特定验证
+    if (item.type === 'text' && (!item.text || !item.fontSize)) {
+      console.warn('文本卡片缺少必要字段:', item);
+      return false;
+    }
+
+    if (item.type === 'image' && !item.src && !item.image) {
+      console.warn('图片卡片缺少图片源:', item);
+      return false;
+    }
+
+    return true;
+  });
+}
+
+// 使用验证函数
+const rawData = await fetchDataFromAPI();
+const validData = validateCardData(rawData);
+await kitBoxRef.current?.init(validData);
 ```
 
-## 注意
-如果`type`为`iamge`时，字段`image`必须是一个`Image`对象。
+### 3. 异步初始化
+
+`init()` 是异步方法，确保在操作前等待完成：
+
+```ts
+// ✅ 正确的使用方式
+const initEditor = async () => {
+  await kitBoxRef.current?.init(templateData);
+  console.log('初始化完成，可以进行后续操作');
+};
+
+// ❌ 错误的使用方式
+kitBoxRef.current?.init(templateData); // 没有等待
+// 可能在初始化完成前就进行其他操作，导致异常
+```
+
+## 相关方法
+
+- [`add()`](./add) - 添加单个卡片
+- [`getDomList()`](./getDomList) - 获取当前所有卡片
+- [`updateCurrentData()`](./updateCurrentData) - 更新当前选中卡片

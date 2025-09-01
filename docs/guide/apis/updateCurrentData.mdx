@@ -1,37 +1,516 @@
-# 更新卡片
+# 更新卡片数据 updateCurrentData()
 
-## updateCurrentData()
+`updateCurrentData()` 方法用于更新当前选中卡片的数据，支持部分属性更新和完整替换。
 
-更新某个卡片需要id匹配
+## 方法签名
 
-```tsx
-kitBoxRef.updateCurrentData({} as CardData)
+```ts
+async updateCurrentData(data: CardData): Promise<void>
 ```
 
-### [CardData](./type)
+## 参数说明
 
-## 示例
+- **data**
+  - 类型: `CardData`
+  - 必填: ✅
+  - 说明: 要更新的卡片数据，必须包含完整的 `CardData` 对象
 
-```tsx
-<kitBox
-  ref={kitBoxRef}
-/>
+详细的 `CardData` 类型定义请查看 [TypeScript 类型](./type)。
+
+## 基础用法
+
+### 更新文本卡片
+
+```ts
+// 获取当前选中的卡片数据
+const currentCard = getCurrentSelectedCard();
+
+if (currentCard && currentCard.type === 'text') {
+  // 更新文本内容
+  await kitBoxRef.current?.updateCurrentData({
+    ...currentCard,
+    text: '新的文本内容',
+    fontSize: 32,
+    color: '#ff0000',
+  });
+}
 ```
 
-```tsx
-kitBoxRef.current?.add({
-  id: cardData.id,
-  width: 300,
-  height: 200,
-  x: 0,
-  y: 0,
-  text: '你好世界你好世界1234567890🤔abcdefghijklmnopqrstuvwxyz',
-  type: 'text',
-  fontSize: 32,
-  fontFamily: 'cursive',
-  color: '#db3f9178',
-  fontWeight: 'bold',
-  fontStyle: 'italic',
-  decoration: 'line-through'
-})
+### 更新图片卡片
+
+```ts
+// 更新图片卡片的位置和尺寸
+const currentCard = getCurrentSelectedCard();
+
+if (currentCard && currentCard.type === 'image') {
+  await kitBoxRef.current?.updateCurrentData({
+    ...currentCard,
+    x: 200,
+    y: 300,
+    width: 500,
+    height: 400,
+  });
+}
 ```
+
+## 完整示例
+
+### React 属性面板
+
+```tsx
+import { useState, useEffect } from 'react';
+import { KitBox } from 'poster-kit/dist/react/components.ts';
+import type { CardData } from 'poster-kit';
+
+const PropertyPanel = () => {
+  const kitBoxRef = useRef<ComponentRef<typeof KitBox>>(null);
+  const [currentCard, setCurrentCard] = useState<CardData | null>(null);
+
+  // 监听卡片选中变化
+  const handleDataChange = (e: CustomEvent<CardData>) => {
+    setCurrentCard(e.detail);
+  };
+
+  // 更新卡片属性
+  const updateCardProperty = async (property: string, value: any) => {
+    if (!currentCard) return;
+
+    const updatedCard = {
+      ...currentCard,
+      [property]: value,
+    };
+
+    try {
+      await kitBoxRef.current?.updateCurrentData(updatedCard);
+      setCurrentCard(updatedCard);
+    } catch (error) {
+      console.error('更新卡片属性失败:', error);
+    }
+  };
+
+  // 批量更新属性
+  const batchUpdateProperties = async (properties: Partial<CardData>) => {
+    if (!currentCard) return;
+
+    const updatedCard = {
+      ...currentCard,
+      ...properties,
+    };
+
+    try {
+      await kitBoxRef.current?.updateCurrentData(updatedCard);
+      setCurrentCard(updatedCard);
+    } catch (error) {
+      console.error('批量更新失败:', error);
+    }
+  };
+
+  return (
+    <div className="property-panel">
+      <KitBox
+        ref={kitBoxRef}
+        width={1080}
+        height={1920}
+        onCurrentDataChange={handleDataChange}
+      />
+
+      {currentCard && (
+        <div className="properties">
+          <h3>卡片属性</h3>
+
+          {/* 基础属性 */}
+          <div className="property-section">
+            <h4>位置与尺寸</h4>
+
+            <div className="property-row">
+              <label>X 坐标:</label>
+              <input
+                type="number"
+                value={currentCard.x}
+                onChange={(e) =>
+                  updateCardProperty('x', Number(e.target.value))
+                }
+              />
+            </div>
+
+            <div className="property-row">
+              <label>Y 坐标:</label>
+              <input
+                type="number"
+                value={currentCard.y}
+                onChange={(e) =>
+                  updateCardProperty('y', Number(e.target.value))
+                }
+              />
+            </div>
+
+            <div className="property-row">
+              <label>宽度:</label>
+              <input
+                type="number"
+                value={currentCard.width}
+                onChange={(e) =>
+                  updateCardProperty('width', Number(e.target.value))
+                }
+              />
+            </div>
+
+            <div className="property-row">
+              <label>高度:</label>
+              <input
+                type="number"
+                value={currentCard.height}
+                onChange={(e) =>
+                  updateCardProperty('height', Number(e.target.value))
+                }
+              />
+            </div>
+          </div>
+
+          {/* 文本属性 */}
+          {currentCard.type === 'text' && (
+            <div className="property-section">
+              <h4>文本属性</h4>
+
+              <div className="property-row">
+                <label>文本内容:</label>
+                <textarea
+                  value={currentCard.text}
+                  onChange={(e) => updateCardProperty('text', e.target.value)}
+                  rows={3}
+                />
+              </div>
+
+              <div className="property-row">
+                <label>字体大小:</label>
+                <input
+                  type="number"
+                  value={currentCard.fontSize}
+                  onChange={(e) =>
+                    updateCardProperty('fontSize', Number(e.target.value))
+                  }
+                />
+              </div>
+
+              <div className="property-row">
+                <label>字体颜色:</label>
+                <input
+                  type="color"
+                  value={currentCard.color}
+                  onChange={(e) => updateCardProperty('color', e.target.value)}
+                />
+              </div>
+
+              <div className="property-row">
+                <label>字体粗细:</label>
+                <select
+                  value={currentCard.fontWeight}
+                  onChange={(e) =>
+                    updateCardProperty('fontWeight', e.target.value)
+                  }
+                >
+                  <option value="normal">正常</option>
+                  <option value="bold">粗体</option>
+                  <option value="lighter">细体</option>
+                </select>
+              </div>
+
+              <div className="property-row">
+                <label>字体样式:</label>
+                <select
+                  value={currentCard.fontStyle}
+                  onChange={(e) =>
+                    updateCardProperty('fontStyle', e.target.value)
+                  }
+                >
+                  <option value="normal">正常</option>
+                  <option value="italic">斜体</option>
+                </select>
+              </div>
+
+              <div className="property-row">
+                <label>文字装饰:</label>
+                <select
+                  value={currentCard.decoration}
+                  onChange={(e) =>
+                    updateCardProperty('decoration', e.target.value)
+                  }
+                >
+                  <option value="none">无</option>
+                  <option value="underline">下划线</option>
+                  <option value="line-through">删除线</option>
+                </select>
+              </div>
+            </div>
+          )}
+
+          {/* 快捷操作 */}
+          <div className="property-section">
+            <h4>快捷操作</h4>
+
+            <button onClick={() => batchUpdateProperties({ x: 0, y: 0 })}>
+              移到左上角
+            </button>
+
+            <button
+              onClick={() =>
+                batchUpdateProperties({
+                  x: (1080 - currentCard.width) / 2,
+                  y: (1920 - currentCard.height) / 2,
+                })
+              }
+            >
+              居中对齐
+            </button>
+
+            {currentCard.type === 'text' && (
+              <>
+                <button
+                  onClick={() =>
+                    batchUpdateProperties({
+                      fontSize: 48,
+                      fontWeight: 'bold',
+                      color: '#ff0000',
+                    })
+                  }
+                >
+                  设为标题样式
+                </button>
+
+                <button
+                  onClick={() =>
+                    batchUpdateProperties({
+                      fontSize: 16,
+                      fontWeight: 'normal',
+                      color: '#666666',
+                    })
+                  }
+                >
+                  设为正文样式
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+```
+
+### Vue 属性编辑器
+
+```vue
+<template>
+  <div class="property-editor">
+    <kit-box
+      ref="kitBoxRef"
+      :width="1080"
+      :height="1920"
+      @current-data-change="handleDataChange"
+    />
+
+    <div v-if="currentCard" class="property-panel">
+      <h3>属性编辑</h3>
+
+      <!-- 位置控制 -->
+      <div class="control-group">
+        <h4>位置</h4>
+        <div class="control-row">
+          <label>X:</label>
+          <input
+            v-model.number="currentCard.x"
+            type="number"
+            @input="updateCard"
+          />
+          <label>Y:</label>
+          <input
+            v-model.number="currentCard.y"
+            type="number"
+            @input="updateCard"
+          />
+        </div>
+      </div>
+
+      <!-- 尺寸控制 -->
+      <div class="control-group">
+        <h4>尺寸</h4>
+        <div class="control-row">
+          <label>宽:</label>
+          <input
+            v-model.number="currentCard.width"
+            type="number"
+            @input="updateCard"
+          />
+          <label>高:</label>
+          <input
+            v-model.number="currentCard.height"
+            type="number"
+            @input="updateCard"
+          />
+        </div>
+      </div>
+
+      <!-- 文本属性 -->
+      <div v-if="currentCard.type === 'text'" class="control-group">
+        <h4>文本属性</h4>
+
+        <div class="control-row">
+          <label>内容:</label>
+          <textarea v-model="currentCard.text" @input="updateCard" rows="3" />
+        </div>
+
+        <div class="control-row">
+          <label>字号:</label>
+          <input
+            v-model.number="currentCard.fontSize"
+            type="number"
+            @input="updateCard"
+          />
+        </div>
+
+        <div class="control-row">
+          <label>颜色:</label>
+          <input v-model="currentCard.color" type="color" @input="updateCard" />
+        </div>
+      </div>
+
+      <!-- 预设样式 -->
+      <div class="control-group">
+        <h4>预设样式</h4>
+        <button @click="applyPreset('title')">标题样式</button>
+        <button @click="applyPreset('subtitle')">副标题样式</button>
+        <button @click="applyPreset('body')">正文样式</button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, computed } from 'vue';
+import type { CardData } from 'poster-kit';
+
+const kitBoxRef = ref<HTMLKitBoxElement | null>(null);
+const currentCard = ref<CardData | null>(null);
+
+function handleDataChange(e: CustomEvent<CardData>) {
+  currentCard.value = { ...e.detail };
+}
+
+// 防抖更新
+let updateTimer: number | null = null;
+function updateCard() {
+  if (updateTimer) {
+    clearTimeout(updateTimer);
+  }
+
+  updateTimer = setTimeout(async () => {
+    if (currentCard.value && kitBoxRef.value) {
+      try {
+        await kitBoxRef.value.updateCurrentData(currentCard.value);
+      } catch (error) {
+        console.error('更新失败:', error);
+      }
+    }
+  }, 300);
+}
+
+// 应用预设样式
+async function applyPreset(preset: string) {
+  if (!currentCard.value || currentCard.value.type !== 'text') return;
+
+  const presets = {
+    title: {
+      fontSize: 48,
+      fontWeight: 'bold',
+      color: '#333333',
+      fontStyle: 'normal',
+      decoration: 'none',
+    },
+    subtitle: {
+      fontSize: 32,
+      fontWeight: 'normal',
+      color: '#666666',
+      fontStyle: 'normal',
+      decoration: 'none',
+    },
+    body: {
+      fontSize: 16,
+      fontWeight: 'normal',
+      color: '#333333',
+      fontStyle: 'normal',
+      decoration: 'none',
+    },
+  };
+
+  const style = presets[preset];
+  if (style) {
+    const updatedCard = { ...currentCard.value, ...style };
+    currentCard.value = updatedCard;
+
+    try {
+      await kitBoxRef.value?.updateCurrentData(updatedCard);
+    } catch (error) {
+      console.error('应用预设失败:', error);
+    }
+  }
+}
+</script>
+```
+
+## 注意事项
+
+### 1. 数据完整性
+
+始终传递完整的 `CardData` 对象：
+
+```ts
+// ✅ 正确 - 传递完整对象
+await kitBoxRef.current?.updateCurrentData({
+  ...currentCard,
+  x: newX,
+  y: newY,
+});
+
+// ❌ 错误 - 只传递部分数据
+await kitBoxRef.current?.updateCurrentData({
+  id: currentCard.id,
+  x: newX,
+  y: newY,
+});
+```
+
+### 2. 类型安全
+
+确保更新的属性符合卡片类型：
+
+```ts
+if (currentCard.type === 'text') {
+  // 只有文本卡片才能更新文本属性
+  await kitBoxRef.current?.updateCurrentData({
+    ...currentCard,
+    text: '新文本',
+    fontSize: 24,
+  });
+}
+```
+
+### 3. 异步处理
+
+正确处理异步操作：
+
+```ts
+try {
+  await kitBoxRef.current?.updateCurrentData(updatedCard);
+  console.log('更新成功');
+} catch (error) {
+  console.error('更新失败:', error);
+  // 恢复到之前的状态或显示错误提示
+}
+```
+
+## 相关 API
+
+- [`add()`](./add) - 添加新卡片
+- [`current-data-change`](./currentDataChange) - 监听数据变化
+- [`getDomList()`](./getDomList) - 获取所有卡片数据

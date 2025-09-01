@@ -1,41 +1,182 @@
-import { PackageManagerTabs } from "/theme/index";
+import { PackageManagerTabs } from '/theme/index';
 
 # 快速开始
 
-## 安装项目
+本指南将帮助您在几分钟内完成 PosterKit 的安装和基础配置，快速体验海报编辑功能。
+
+## 📦 安装
+
+### 核心包安装
 
 <PackageManagerTabs command="install poster-kit" />
 
-## React中使用
+### 框架适配包（可选）
 
-[例子](https://github.com/Fairfarren/PosterKit/tree/main/example/react)
+根据您的项目框架选择对应的适配包：
 
-需要先安装运行时
+**React 项目**
 
 <PackageManagerTabs command="install @stencil/react-output-target" />
 
-```tsx title=App.tsx
-import "./App.css";
-import type { CardData } from "poster-kit";
-import { KitBox } from "poster-kit/dist/react/components.ts";
-import { type ComponentRef, useRef } from "react";
+**Vue 项目**
+
+<PackageManagerTabs command="install @stencil/vue-output-target" />
+
+## ⚡ 快速体验
+
+### 原生 HTML 使用
+
+最简单的使用方式，适合快速验证功能：
+
+```html title="index.html"
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>PosterKit Demo</title>
+    <script
+      type="module"
+      src="https://unpkg.com/poster-kit/dist/posterKit/posterKit.esm.js"
+    ></script>
+  </head>
+  <body>
+    <div style="width: 800px; height: 600px;">
+      <kit-box width="1080" height="1920"></kit-box>
+    </div>
+
+    <script>
+      const kitBox = document.querySelector('kit-box');
+
+      // 添加文本卡片
+      kitBox.add({
+        id: 'text-1',
+        type: 'text',
+        text: '欢迎使用 PosterKit!',
+        x: 100,
+        y: 100,
+        width: 300,
+        height: 100,
+        fontSize: 32,
+        fontFamily: 'Arial',
+        color: '#333333',
+        fontWeight: 'bold',
+        fontStyle: 'normal',
+        decoration: 'none',
+      });
+
+      // 监听数据变化
+      kitBox.addEventListener('current-data-change', (e) => {
+        console.log('当前选中的卡片：', e.detail);
+      });
+    </script>
+  </body>
+</html>
+```
+
+## 🔧 React 集成
+
+### 1. 项目配置
+
+React 项目需要额外的配置来支持 Web Components：
+
+```tsx title="App.tsx"
+import './App.css';
+import type { CardData } from 'poster-kit';
+import { KitBox } from 'poster-kit/dist/react/components.ts';
+import { type ComponentRef, useRef, useState } from 'react';
+
 const App = () => {
   const kitBoxRef = useRef<ComponentRef<typeof KitBox> | null>(null);
+  const [currentData, setCurrentData] = useState<CardData | null>(null);
 
-  function currentDataChange(data: CardData) {
-    console.log(data);
+  // 处理数据变化
+  function handleDataChange(data: CardData) {
+    console.log('数据变化：', data);
+    setCurrentData(data);
+  }
+
+  // 添加文本卡片
+  function addTextCard() {
+    kitBoxRef.current?.add({
+      id: Date.now().toString(),
+      type: 'text',
+      text: '新的文本内容',
+      x: Math.random() * 500,
+      y: Math.random() * 500,
+      width: 300,
+      height: 100,
+      fontSize: 24,
+      fontFamily: 'Arial, sans-serif',
+      color: '#333333',
+      fontWeight: 'normal',
+      fontStyle: 'normal',
+      decoration: 'none',
+    });
+  }
+
+  // 添加图片卡片
+  function addImageCard() {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.src = 'https://via.placeholder.com/300x200/4285f4/ffffff?text=Sample';
+    img.onload = () => {
+      kitBoxRef.current?.add({
+        id: Date.now().toString(),
+        type: 'image',
+        image: img,
+        x: Math.random() * 400,
+        y: Math.random() * 400,
+        width: 300,
+        height: 200,
+      });
+    };
+  }
+
+  // 生成海报
+  async function generatePoster() {
+    try {
+      const canvas = await kitBoxRef.current?.createPoster();
+      if (canvas) {
+        const url = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.download = 'poster.png';
+        link.href = url;
+        link.click();
+      }
+    } catch (error) {
+      console.error('生成海报失败：', error);
+    }
   }
 
   return (
-    <div className="content">
-      <div className="box">
+    <div className="app">
+      <div className="editor-container">
         <KitBox
           ref={kitBoxRef}
           width={1080}
           height={1920}
-          onCurrentDataChange={(e) => currentDataChange(e.detail)}
+          onCurrentDataChange={(e) => handleDataChange(e.detail)}
         />
       </div>
+
+      <div className="toolbar">
+        <button onClick={addTextCard}>添加文本</button>
+        <button onClick={addImageCard}>添加图片</button>
+        <button onClick={generatePoster}>生成海报</button>
+      </div>
+
+      {currentData && (
+        <div className="properties-panel">
+          <h3>属性面板</h3>
+          <p>选中元素 ID: {currentData.id}</p>
+          <p>类型: {currentData.type}</p>
+          <p>
+            位置: ({currentData.x}, {currentData.y})
+          </p>
+          <p>
+            尺寸: {currentData.width} × {currentData.height}
+          </p>
+        </div>
+      )}
     </div>
   );
 };
@@ -43,94 +184,339 @@ const App = () => {
 export default App;
 ```
 
-## Vue中使用
+```css title="App.css"
+.app {
+  display: flex;
+  height: 100vh;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
 
-[例子](https://github.com/Fairfarren/PosterKit/tree/main/example/vue)
+.editor-container {
+  flex: 1;
+  padding: 20px;
+  background: #f5f5f5;
+}
 
-需要先安装运行时
+.toolbar {
+  width: 200px;
+  padding: 20px;
+  background: white;
+  border-left: 1px solid #e0e0e0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
 
-<PackageManagerTabs command="install @stencil/vue-output-target" />
+.toolbar button {
+  padding: 10px 15px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
 
-根据自己的框架安装包
-```ts title=rsbuild.config.ts 或 vite.config.ts
-import { defineConfig } from '@rsbuild/core'
-import { pluginVue } from '@rsbuild/plugin-vue'
-import { pluginBabel } from '@rsbuild/plugin-babel'
-import { pluginVueJsx } from '@rsbuild/plugin-vue-jsx'
+.toolbar button:hover {
+  background: #f5f5f5;
+}
+
+.properties-panel {
+  width: 250px;
+  padding: 20px;
+  background: white;
+  border-left: 1px solid #e0e0e0;
+  overflow-y: auto;
+}
+
+.properties-panel h3 {
+  margin-top: 0;
+  color: #333;
+}
+
+.properties-panel p {
+  margin: 8px 0;
+  font-size: 14px;
+  color: #666;
+}
+```
+
+### 2. 完整示例
+
+参考我们的 [React 完整示例](https://github.com/Fairfarren/PosterKit/tree/main/example/react)，包含了图片列表、属性编辑面板等完整功能。
+
+## 🔧 Vue 集成
+
+### 1. 构建配置
+
+Vue 项目需要配置自定义元素识别：
+
+```ts title="vite.config.ts / rsbuild.config.ts"
+import { defineConfig } from '@rsbuild/core';
+import { pluginVue } from '@rsbuild/plugin-vue';
 
 export default defineConfig({
-  html: {
-    title: 'poster-kit example vue',
-  },
-  output: {
-    assetPrefix: './',
-  },
   plugins: [
-    pluginBabel({
-      include: /\.(?:jsx|tsx)$/,
-    }),
     pluginVue({
       vueLoaderOptions: {
         compilerOptions: {
-          isCustomElement: (tag) => tag.startsWith('kit-'), // 例如所有以 my- 开头的标签
+          // 告诉 Vue 将 kit- 开头的标签视为自定义元素
+          isCustomElement: (tag) => tag.startsWith('kit-'),
         },
       },
     }),
-    pluginVueJsx(),
   ],
-})
-// 如果使用vite，请使用下面这个写法
-// import vueJsx from '@vitejs/plugin-vue-jsx'
-// plugins: [
-//   vue({
-//     template: {
-//       compilerOptions: {
-//         isCustomElement: (tag) => tag.includes('kit-'),
+});
+
+// Vite 项目配置
+// import { defineConfig } from 'vite'
+// import vue from '@vitejs/plugin-vue'
+//
+// export default defineConfig({
+//   plugins: [
+//     vue({
+//       template: {
+//         compilerOptions: {
+//           isCustomElement: (tag) => tag.startsWith('kit-'),
+//         },
 //       },
-//     },
-//   }),
-//   vueJsx(),
-// ],
+//     }),
+//   ],
+// })
 ```
 
+### 2. 组件注册
 
-```ts title=入口文件 index.ts
-import { createApp } from "vue";
-import App from "./App.vue";
-import "./index.css";
-// 引入并注册组件 poster-kit
-import "poster-kit/dist/vue/index.ts";
+```ts title="main.ts"
+import { createApp } from 'vue';
+import App from './App.vue';
+import './index.css';
+
+// 引入并注册 PosterKit 组件
+import 'poster-kit/dist/vue/index.ts';
 
 const app = createApp(App);
-
-app.mount("#root");
+app.mount('#app');
 ```
 
-```html title=App.vue
+### 3. 组件使用
+
+```html title="App.vue"
 <template>
-  <div class="content">
-    <div class="box">
+  <div class="app">
+    <div class="editor-container">
       <kit-box
         ref="kitBoxRef"
         :width="1080"
         :height="1920"
-        @currentDataChange="currentDataChange"
+        @current-data-change="handleDataChange"
       />
+    </div>
+
+    <div class="toolbar">
+      <button @click="addTextCard">添加文本</button>
+      <button @click="addImageCard">添加图片</button>
+      <button @click="generatePoster">生成海报</button>
+    </div>
+
+    <div v-if="currentData" class="properties-panel">
+      <h3>属性面板</h3>
+      <div class="property-item">
+        <label>ID:</label>
+        <span>{{ currentData.id }}</span>
+      </div>
+      <div class="property-item">
+        <label>类型:</label>
+        <span>{{ currentData.type }}</span>
+      </div>
+      <div class="property-item">
+        <label>位置:</label>
+        <span>({{ currentData.x }}, {{ currentData.y }})</span>
+      </div>
+      <div class="property-item">
+        <label>尺寸:</label>
+        <span>{{ currentData.width }} × {{ currentData.height }}</span>
+      </div>
     </div>
   </div>
 </template>
+
 <script setup lang="ts">
-  import type { CardData } from "poster-kit";
-  import { ref } from "vue";
+  import type { CardData } from 'poster-kit';
+  import { ref } from 'vue';
 
   const kitBoxRef = ref<HTMLKitBoxElement | null>(null);
+  const currentData = ref<CardData | null>(null);
 
-  function currentDataChange(e: CustomEvent<CardData>) {
-    console.log(e.detail);
+  // 处理数据变化
+  function handleDataChange(e: CustomEvent<CardData>) {
+    console.log('数据变化：', e.detail);
+    currentData.value = e.detail;
+  }
+
+  // 添加文本卡片
+  function addTextCard() {
+    kitBoxRef.value?.add({
+      id: Date.now().toString(),
+      type: 'text',
+      text: '新的文本内容',
+      x: Math.random() * 500,
+      y: Math.random() * 500,
+      width: 300,
+      height: 100,
+      fontSize: 24,
+      fontFamily: 'Arial, sans-serif',
+      color: '#333333',
+      fontWeight: 'normal',
+      fontStyle: 'normal',
+      decoration: 'none',
+    });
+  }
+
+  // 添加图片卡片
+  function addImageCard() {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.src = 'https://via.placeholder.com/300x200/34a853/ffffff?text=Sample';
+    img.onload = () => {
+      kitBoxRef.value?.add({
+        id: Date.now().toString(),
+        type: 'image',
+        image: img,
+        x: Math.random() * 400,
+        y: Math.random() * 400,
+        width: 300,
+        height: 200,
+      });
+    };
+  }
+
+  // 生成海报
+  async function generatePoster() {
+    try {
+      const canvas = await kitBoxRef.value?.createPoster();
+      if (canvas) {
+        const url = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.download = 'poster.png';
+        link.href = url;
+        link.click();
+      }
+    } catch (error) {
+      console.error('生成海报失败：', error);
+    }
   }
 </script>
+
+<style scoped>
+  .app {
+    display: flex;
+    height: 100vh;
+    font-family:
+      -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+
+  .editor-container {
+    flex: 1;
+    padding: 20px;
+    background: #f5f5f5;
+  }
+
+  .toolbar {
+    width: 200px;
+    padding: 20px;
+    background: white;
+    border-left: 1px solid #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .toolbar button {
+    padding: 10px 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: white;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+
+  .toolbar button:hover {
+    background: #f5f5f5;
+  }
+
+  .properties-panel {
+    width: 250px;
+    padding: 20px;
+    background: white;
+    border-left: 1px solid #e0e0e0;
+  }
+
+  .properties-panel h3 {
+    margin-top: 0;
+    color: #333;
+  }
+
+  .property-item {
+    display: flex;
+    justify-content: space-between;
+    margin: 8px 0;
+    font-size: 14px;
+  }
+
+  .property-item label {
+    color: #666;
+    font-weight: 500;
+  }
+
+  .property-item span {
+    color: #333;
+  }
+</style>
 ```
 
-## 其他框架
+### 4. 完整示例
 
-可以参考这里`html+js`的[例子](https://github.com/Fairfarren/PosterKit/blob/main/packages/posterKit/src/index.html)
+参考我们的 [Vue 完整示例](https://github.com/Fairfarren/PosterKit/tree/main/example/vue)，了解更多高级用法。
+
+## 🎯 基础功能演示
+
+### 卡片操作
+
+- **拖拽移动**：点击卡片并拖拽到目标位置
+- **缩放调整**：拖拽卡片四角和边缘的控制点
+- **图层管理**：右键菜单或快捷键进行图层操作
+- **属性编辑**：选中卡片后在属性面板编辑
+
+### 事件监听
+
+```javascript
+// 监听当前选中卡片变化
+kitBox.addEventListener('current-data-change', (e) => {
+  const cardData = e.detail;
+  console.log('选中卡片：', cardData);
+});
+```
+
+### 海报导出
+
+```javascript
+// 生成海报图片
+const canvas = await kitBox.createPoster();
+const imageUrl = canvas.toDataURL('image/png');
+```
+
+## 🚀 下一步
+
+恭喜！您已经成功集成了 PosterKit。接下来可以：
+
+1. **探索 API**：查看[完整 API 文档](/guide/apis/init)了解更多功能
+2. **自定义样式**：学习如何[自定义主题和样式](/guide/customization/theming)
+3. **高级功能**：了解[批量操作](/guide/advanced/batch-operations)和[插件扩展](/guide/advanced/plugins)
+4. **生产部署**：查看[性能优化指南](/guide/deployment/optimization)
+
+## ❓ 遇到问题？
+
+- 查看 [常见问题](/guide/faq) 快速解决常见问题
+- 访问 [GitHub Issues](https://github.com/Fairfarren/PosterKit/issues) 报告 Bug 或建议
+- 加入我们的 [讨论社区](https://github.com/Fairfarren/PosterKit/discussions) 与其他开发者交流

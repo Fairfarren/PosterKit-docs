@@ -1,0 +1,671 @@
+# 获取卡片列表 getDomList()
+
+`getDomList()` 方法用于获取当前画布中所有卡片的数据列表，通常用于数据持久化、导出或状态同步。
+
+## 方法签名
+
+```ts
+async getDomList(): Promise<CardData[]>
+```
+
+## 返回值
+
+- **返回类型**: `Promise<CardData[]>`
+- **说明**: 返回包含所有卡片数据的数组，按照渲染层级顺序排列
+
+## 基础用法
+
+```ts
+// 获取所有卡片数据
+const allCards = await kitBoxRef.current?.getDomList();
+console.log('当前画布中的所有卡片:', allCards);
+
+// 检查是否有卡片
+if (allCards && allCards.length > 0) {
+  console.log(\`共有 \${allCards.length} 个卡片\`);
+} else {
+  console.log('画布为空');
+}
+```
+
+## 使用场景
+
+### 1. 数据持久化
+
+```tsx
+import { useState, useCallback } from 'react';
+import { KitBox } from 'poster-kit/dist/react/components.ts';
+import type { CardData } from 'poster-kit';
+
+const PosterEditor = () => {
+  const kitBoxRef = useRef<ComponentRef<typeof KitBox>>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // 保存到本地存储
+  const saveToLocalStorage = useCallback(async () => {
+    try {
+      setIsSaving(true);
+      const allCards = await kitBoxRef.current?.getDomList();
+
+      if (allCards) {
+        localStorage.setItem('poster-data', JSON.stringify(allCards));
+        console.log('保存成功，共保存', allCards.length, '个卡片');
+      }
+    } catch (error) {
+      console.error('保存失败:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  }, []);
+
+  // 保存到服务器
+  const saveToServer = useCallback(async () => {
+    try {
+      setIsSaving(true);
+      const allCards = await kitBoxRef.current?.getDomList();
+
+      if (allCards) {
+        const response = await fetch('/api/posters', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            cards: allCards,
+            timestamp: Date.now(),
+            version: '1.0',
+          }),
+        });
+
+        if (response.ok) {
+          console.log('服务器保存成功');
+        } else {
+          throw new Error('服务器保存失败');
+        }
+      }
+    } catch (error) {
+      console.error('保存到服务器失败:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  }, []);
+
+  // 自动保存（防抖）
+  const autoSave = useCallback(
+    debounce(async () => {
+      await saveToLocalStorage();
+    }, 2000),
+    [saveToLocalStorage],
+  );
+
+  // 监听数据变化触发自动保存
+  const handleDataChange = (e: CustomEvent<CardData>) => {
+    autoSave();
+  };
+
+  return (
+    <div className="editor">
+      <div className="toolbar">
+        <button onClick={saveToLocalStorage} disabled={isSaving}>
+          {isSaving ? '保存中...' : '保存到本地'}
+        </button>
+        <button onClick={saveToServer} disabled={isSaving}>
+          {isSaving ? '保存中...' : '保存到服务器'}
+        </button>
+      </div>
+
+      <KitBox
+        ref={kitBoxRef}
+        width={1080}
+        height={1920}
+        onCurrentDataChange={handleDataChange}
+      />
+    </div>
+  );
+};
+```
+
+### 2. 数据导出
+
+```ts
+// 导出为 JSON 文件
+const exportAsJSON = async () => {
+  try {
+    const allCards = await kitBoxRef.current?.getDomList();
+
+    if (allCards) {
+      const exportData = {
+        version: '1.0',
+        canvas: {
+          width: 1080,
+          height: 1920
+        },
+        cards: allCards,
+        exportTime: new Date().toISOString(),
+        metadata: {
+          totalCards: allCards.length,
+          textCards: allCards.filter(card => card.type === 'text').length,
+          imageCards: allCards.filter(card => card.type === 'image').length
+        }
+      };
+
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+        type: 'application/json'
+      });
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = \`poster-\${Date.now()}.json\`;
+      link.click();
+
+      URL.revokeObjectURL(url);
+      console.log('JSON 导出成功');
+    }
+  } catch (error) {
+    console.error('导出失败:', error);
+  }
+};
+
+// 导出为 CSV 文件（简化版）
+const exportAsCSV = async () => {
+  try {
+    const allCards = await kitBoxRef.current?.getDomList();
+
+    if (allCards) {
+      const csvHeader = 'ID,Type,X,Y,Width,Height,Text,FontSize,Color\n';
+      const csvRows = allCards.map(card => {
+        return [
+          card.id,
+          card.type,
+          card.x,
+          card.y,
+          card.width,
+          card.height,
+          card.type === 'text' ? \`"\${card.text.replace(/"/g, '""')}"\` : '',
+          card.type === 'text' ? card.fontSize : '',
+          card.type === 'text' ? card.color : ''
+        ].join(',');
+      }).join('\n');
+
+      const csvContent = csvHeader + csvRows;
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = \`poster-data-\${Date.now()}.csv\`;
+      link.click();
+
+      URL.revokeObjectURL(url);
+      console.log('CSV 导出成功');
+    }
+  } catch (error) {
+    console.error('CSV 导出失败:', error);
+  }
+};
+```
+
+### 3. 数据统计分析
+
+```tsx
+const DataAnalytics = () => {
+  const kitBoxRef = useRef<ComponentRef<typeof KitBox>>(null);
+  const [analytics, setAnalytics] = useState(null);
+
+  const analyzeData = useCallback(async () => {
+    try {
+      const allCards = await kitBoxRef.current?.getDomList();
+
+      if (allCards) {
+        const stats = {
+          totalCards: allCards.length,
+          cardTypes: {
+            text: allCards.filter((card) => card.type === 'text').length,
+            image: allCards.filter((card) => card.type === 'image').length,
+          },
+          textStats: {
+            totalCharacters: allCards
+              .filter((card) => card.type === 'text')
+              .reduce((sum, card) => sum + card.text.length, 0),
+            averageFontSize:
+              allCards
+                .filter((card) => card.type === 'text')
+                .reduce((sum, card) => sum + card.fontSize, 0) /
+                allCards.filter((card) => card.type === 'text').length || 0,
+            colorDistribution: {},
+          },
+          layout: {
+            boundingBox: calculateBoundingBox(allCards),
+            density: calculateDensity(allCards),
+            coverage: calculateCoverage(allCards, 1080, 1920),
+          },
+          lastUpdated: new Date().toLocaleString(),
+        };
+
+        // 计算颜色分布
+        allCards
+          .filter((card) => card.type === 'text')
+          .forEach((card) => {
+            stats.textStats.colorDistribution[card.color] =
+              (stats.textStats.colorDistribution[card.color] || 0) + 1;
+          });
+
+        setAnalytics(stats);
+      }
+    } catch (error) {
+      console.error('数据分析失败:', error);
+    }
+  }, []);
+
+  // 计算包围盒
+  const calculateBoundingBox = (cards: CardData[]) => {
+    if (cards.length === 0) return { x: 0, y: 0, width: 0, height: 0 };
+
+    const minX = Math.min(...cards.map((card) => card.x));
+    const minY = Math.min(...cards.map((card) => card.y));
+    const maxX = Math.max(...cards.map((card) => card.x + card.width));
+    const maxY = Math.max(...cards.map((card) => card.y + card.height));
+
+    return {
+      x: minX,
+      y: minY,
+      width: maxX - minX,
+      height: maxY - minY,
+    };
+  };
+
+  // 计算密度
+  const calculateDensity = (cards: CardData[]) => {
+    const totalArea = cards.reduce(
+      (sum, card) => sum + card.width * card.height,
+      0,
+    );
+    return totalArea / (1080 * 1920); // 相对于画布的密度
+  };
+
+  // 计算覆盖率
+  const calculateCoverage = (
+    cards: CardData[],
+    canvasWidth: number,
+    canvasHeight: number,
+  ) => {
+    // 简化计算，实际应用中可能需要更复杂的算法来处理重叠
+    const totalCardArea = cards.reduce(
+      (sum, card) => sum + card.width * card.height,
+      0,
+    );
+    const canvasArea = canvasWidth * canvasHeight;
+    return Math.min(totalCardArea / canvasArea, 1);
+  };
+
+  return (
+    <div className="analytics-panel">
+      <button onClick={analyzeData}>分析数据</button>
+
+      {analytics && (
+        <div className="analytics-results">
+          <h3>数据统计</h3>
+
+          <div className="stat-group">
+            <h4>基础信息</h4>
+            <p>总卡片数: {analytics.totalCards}</p>
+            <p>文本卡片: {analytics.cardTypes.text}</p>
+            <p>图片卡片: {analytics.cardTypes.image}</p>
+          </div>
+
+          <div className="stat-group">
+            <h4>文本统计</h4>
+            <p>总字符数: {analytics.textStats.totalCharacters}</p>
+            <p>平均字号: {analytics.textStats.averageFontSize.toFixed(1)}px</p>
+          </div>
+
+          <div className="stat-group">
+            <h4>布局分析</h4>
+            <p>内容密度: {(analytics.layout.density * 100).toFixed(1)}%</p>
+            <p>画布覆盖率: {(analytics.layout.coverage * 100).toFixed(1)}%</p>
+          </div>
+
+          <div className="stat-group">
+            <h4>颜色分布</h4>
+            {Object.entries(analytics.textStats.colorDistribution).map(
+              ([color, count]) => (
+                <div key={color} className="color-stat">
+                  <span
+                    className="color-indicator"
+                    style={{ backgroundColor: color }}
+                  ></span>
+                  <span>
+                    {color}: {count} 次
+                  </span>
+                </div>
+              ),
+            )}
+          </div>
+
+          <p className="update-time">更新时间: {analytics.lastUpdated}</p>
+        </div>
+      )}
+    </div>
+  );
+};
+```
+
+### 4. 版本控制
+
+```ts
+// 版本历史管理
+class PosterVersionControl {
+  private versions: { timestamp: number; data: CardData[]; description: string }[] = [];
+  private currentVersion = -1;
+  private maxVersions = 50;
+
+  async saveVersion(kitBoxRef: any, description = '') {
+    try {
+      const allCards = await kitBoxRef.current?.getDomList();
+
+      if (allCards) {
+        // 清除后续版本（如果从中间版本开始新的修改）
+        this.versions = this.versions.slice(0, this.currentVersion + 1);
+
+        // 添加新版本
+        this.versions.push({
+          timestamp: Date.now(),
+          data: JSON.parse(JSON.stringify(allCards)), // 深拷贝
+          description: description || \`版本 \${this.versions.length + 1}\`
+        });
+
+        this.currentVersion = this.versions.length - 1;
+
+        // 限制版本数量
+        if (this.versions.length > this.maxVersions) {
+          this.versions.shift();
+          this.currentVersion--;
+        }
+
+        console.log(\`版本已保存: \${description}\`);
+        return true;
+      }
+    } catch (error) {
+      console.error('保存版本失败:', error);
+      return false;
+    }
+  }
+
+  async restoreVersion(kitBoxRef: any, versionIndex: number) {
+    if (versionIndex >= 0 && versionIndex < this.versions.length) {
+      try {
+        const versionData = this.versions[versionIndex];
+        await kitBoxRef.current?.init(versionData.data);
+        this.currentVersion = versionIndex;
+        console.log(\`已恢复到版本: \${versionData.description}\`);
+        return true;
+      } catch (error) {
+        console.error('恢复版本失败:', error);
+        return false;
+      }
+    }
+    return false;
+  }
+
+  async undo(kitBoxRef: any) {
+    if (this.currentVersion > 0) {
+      return await this.restoreVersion(kitBoxRef, this.currentVersion - 1);
+    }
+    return false;
+  }
+
+  async redo(kitBoxRef: any) {
+    if (this.currentVersion < this.versions.length - 1) {
+      return await this.restoreVersion(kitBoxRef, this.currentVersion + 1);
+    }
+    return false;
+  }
+
+  getVersionHistory() {
+    return this.versions.map((version, index) => ({
+      index,
+      description: version.description,
+      timestamp: new Date(version.timestamp).toLocaleString(),
+      isCurrent: index === this.currentVersion,
+      cardCount: version.data.length
+    }));
+  }
+}
+
+// 使用示例
+const versionControl = new PosterVersionControl();
+
+const handleSaveVersion = async () => {
+  await versionControl.saveVersion(kitBoxRef, '用户手动保存');
+};
+
+const handleUndo = async () => {
+  await versionControl.undo(kitBoxRef);
+};
+
+const handleRedo = async () => {
+  await versionControl.redo(kitBoxRef);
+};
+```
+
+### 5. 数据验证与修复
+
+```ts
+// 数据验证和修复工具
+const validateAndRepairData = async () => {
+  try {
+    const allCards = await kitBoxRef.current?.getDomList();
+
+    if (!allCards) return;
+
+    const repairedCards: CardData[] = [];
+    const issues: string[] = [];
+
+    allCards.forEach((card, index) => {
+      let repairedCard = { ...card };
+
+      // 基础验证
+      if (!card.id || typeof card.id !== 'string') {
+        repairedCard.id = \`repaired-\${Date.now()}-\${index}\`;
+        issues.push(\`卡片 \${index} 的 ID 无效，已自动修复\`);
+      }
+
+      // 位置和尺寸验证
+      if (typeof card.x !== 'number' || card.x < 0) {
+        repairedCard.x = Math.max(0, card.x || 0);
+        issues.push(\`卡片 \${card.id} 的 X 坐标无效\`);
+      }
+
+      if (typeof card.y !== 'number' || card.y < 0) {
+        repairedCard.y = Math.max(0, card.y || 0);
+        issues.push(\`卡片 \${card.id} 的 Y 坐标无效\`);
+      }
+
+      if (typeof card.width !== 'number' || card.width <= 0) {
+        repairedCard.width = Math.max(10, card.width || 100);
+        issues.push(\`卡片 \${card.id} 的宽度无效\`);
+      }
+
+      if (typeof card.height !== 'number' || card.height <= 0) {
+        repairedCard.height = Math.max(10, card.height || 50);
+        issues.push(\`卡片 \${card.id} 的高度无效\`);
+      }
+
+      // 类型特定验证
+      if (card.type === 'text') {
+        if (!card.text || typeof card.text !== 'string') {
+          repairedCard.text = '默认文本';
+          issues.push(\`卡片 \${card.id} 的文本内容无效\`);
+        }
+
+        if (typeof card.fontSize !== 'number' || card.fontSize <= 0) {
+          repairedCard.fontSize = 16;
+          issues.push(\`卡片 \${card.id} 的字体大小无效\`);
+        }
+
+        if (!card.color || typeof card.color !== 'string') {
+          repairedCard.color = '#000000';
+          issues.push(\`卡片 \${card.id} 的颜色无效\`);
+        }
+
+        if (!card.fontFamily || typeof card.fontFamily !== 'string') {
+          repairedCard.fontFamily = 'Arial, sans-serif';
+          issues.push(\`卡片 \${card.id} 的字体族无效\`);
+        }
+
+        if (!['normal', 'bold'].includes(card.fontWeight)) {
+          repairedCard.fontWeight = 'normal';
+          issues.push(\`卡片 \${card.id} 的字体粗细无效\`);
+        }
+
+        if (!['normal', 'italic'].includes(card.fontStyle)) {
+          repairedCard.fontStyle = 'normal';
+          issues.push(\`卡片 \${card.id} 的字体样式无效\`);
+        }
+
+        if (!['none', 'underline', 'line-through'].includes(card.decoration)) {
+          repairedCard.decoration = 'none';
+          issues.push(\`卡片 \${card.id} 的文字装饰无效\`);
+        }
+      } else if (card.type === 'image') {
+        if (!card.src && !card.image) {
+          issues.push(\`卡片 \${card.id} 缺少图片源\`);
+          // 可以跳过此卡片或提供默认图片
+          return;
+        }
+      }
+
+      repairedCards.push(repairedCard);
+    });
+
+    if (issues.length > 0) {
+      console.warn('数据验证发现问题:', issues);
+
+      // 可选：应用修复
+      const shouldRepair = confirm(\`发现 \${issues.length} 个数据问题，是否应用自动修复？\`);
+      if (shouldRepair) {
+        await kitBoxRef.current?.init(repairedCards);
+        console.log('数据修复完成');
+      }
+    } else {
+      console.log('数据验证通过，无需修复');
+    }
+
+    return {
+      isValid: issues.length === 0,
+      issues,
+      repairedData: repairedCards
+    };
+  } catch (error) {
+    console.error('数据验证失败:', error);
+    throw error;
+  }
+};
+```
+
+## 性能优化
+
+### 大量数据处理
+
+```ts
+// 对于大量卡片数据，使用流式处理
+const processLargeDataset = async () => {
+  try {
+    const allCards = await kitBoxRef.current?.getDomList();
+
+    if (allCards && allCards.length > 1000) {
+      console.log('检测到大量数据，使用流式处理...');
+
+      // 分批处理
+      const batchSize = 100;
+      const batches = [];
+
+      for (let i = 0; i < allCards.length; i += batchSize) {
+        batches.push(allCards.slice(i, i + batchSize));
+      }
+
+      // 异步处理每个批次
+      const results = await Promise.all(
+        batches.map(async (batch, index) => {
+          // 模拟异步处理
+          await new Promise(resolve => setTimeout(resolve, 10));
+          console.log(\`处理批次 \${index + 1}/\${batches.length}\`);
+          return processBatch(batch);
+        })
+      );
+
+      // 合并结果
+      const finalResult = results.flat();
+      console.log('大量数据处理完成');
+      return finalResult;
+    } else {
+      // 常规处理
+      return processRegularData(allCards);
+    }
+  } catch (error) {
+    console.error('数据处理失败:', error);
+    throw error;
+  }
+};
+
+function processBatch(cards: CardData[]) {
+  // 批次处理逻辑
+  return cards.map(card => ({
+    ...card,
+    processed: true,
+    processTime: Date.now()
+  }));
+}
+
+function processRegularData(cards: CardData[]) {
+  // 常规处理逻辑
+  return cards;
+}
+```
+
+## 注意事项
+
+### 1. 异步操作
+
+`getDomList()` 是异步方法，需要正确处理：
+
+```ts
+// ✅ 正确
+const cards = await kitBoxRef.current?.getDomList();
+
+// ❌ 错误
+const cards = kitBoxRef.current?.getDomList(); // 返回 Promise 对象
+```
+
+### 2. 数据安全
+
+返回的数据是实时的，如需保存应创建副本：
+
+```ts
+// ✅ 正确 - 创建深拷贝
+const cardsCopy = JSON.parse(
+  JSON.stringify(await kitBoxRef.current?.getDomList()),
+);
+
+// ❌ 错误 - 直接引用，可能被后续操作影响
+const cards = await kitBoxRef.current?.getDomList();
+```
+
+### 3. 性能考虑
+
+频繁调用可能影响性能，建议：
+
+```ts
+// 使用防抖减少调用频率
+const debouncedGetList = debounce(async () => {
+  const cards = await kitBoxRef.current?.getDomList();
+  processCards(cards);
+}, 500);
+```
+
+## 相关 API
+
+- [`init()`](./init) - 初始化画布数据
+- [`add()`](./add) - 添加新卡片
+- [`updateCurrentData()`](./updateCurrentData) - 更新卡片数据

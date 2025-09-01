@@ -1,1 +1,9 @@
-["type","createRef","init", "add", "updateCurrentData", "currentDataChange"]
+[
+    "type",
+    "init",
+    "add",
+    "updateCurrentData",
+    "currentDataChange",
+    "getDomList",
+    "createPoster"
+]

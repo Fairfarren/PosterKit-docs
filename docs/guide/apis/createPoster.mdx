@@ -1,0 +1,703 @@
+# 创建海报 createPoster()
+
+`createPoster()` 方法用于将当前画布内容导出为图片，支持多种图片格式和自定义配置选项。
+
+## 方法签名
+
+```ts
+async createPoster(options?: CreatePosterOptions): Promise<string>
+```
+
+## 参数
+
+### CreatePosterOptions
+
+```ts
+interface CreatePosterOptions {
+  /** 图片格式，默认 'image/png' */
+  format?: 'image/png' | 'image/jpeg' | 'image/webp';
+  /** 图片质量 (0-1)，仅对 JPEG 和 WebP 有效，默认 0.9 */
+  quality?: number;
+  /** 输出宽度，默认使用画布宽度 */
+  width?: number;
+  /** 输出高度，默认使用画布高度 */
+  height?: number;
+  /** 背景色，默认透明 */
+  backgroundColor?: string;
+  /** 是否包含画布边框，默认 false */
+  includeBorder?: boolean;
+  /** DPI 设置，默认 72 */
+  dpi?: number;
+}
+```
+
+## 返回值
+
+- **返回类型**: `Promise<string>`
+- **说明**: 返回 base64 编码的图片数据URL
+
+## 基础用法
+
+```tsx
+import { useRef } from 'react';
+import { KitBox } from 'poster-kit/dist/react/components.ts';
+
+const PosterEditor = () => {
+  const kitBoxRef = useRef<ComponentRef<typeof KitBox>>(null);
+
+  // 基础导出
+  const exportPoster = async () => {
+    try {
+      const imageDataUrl = await kitBoxRef.current?.createPoster();
+
+      if (imageDataUrl) {
+        // 创建下载链接
+        const link = document.createElement('a');
+        link.href = imageDataUrl;
+        link.download = \`poster-\${Date.now()}.png\`;
+        link.click();
+
+        console.log('海报导出成功');
+      }
+    } catch (error) {
+      console.error('导出失败:', error);
+    }
+  };
+
+  return (
+    <div>
+      <KitBox
+        ref={kitBoxRef}
+        width={1080}
+        height={1920}
+      />
+      <button onClick={exportPoster}>导出海报</button>
+    </div>
+  );
+};
+```
+
+## 高级配置
+
+### 1. 指定图片格式和质量
+
+```ts
+// PNG 格式（无损，支持透明）
+const exportAsPNG = async () => {
+  const imageDataUrl = await kitBoxRef.current?.createPoster({
+    format: 'image/png',
+    backgroundColor: 'transparent', // 透明背景
+  });
+
+  if (imageDataUrl) {
+    downloadImage(imageDataUrl, 'poster.png');
+  }
+};
+
+// JPEG 格式（有损，更小文件）
+const exportAsJPEG = async () => {
+  const imageDataUrl = await kitBoxRef.current?.createPoster({
+    format: 'image/jpeg',
+    quality: 0.95, // 高质量
+    backgroundColor: '#ffffff', // JPEG 不支持透明，需要背景色
+  });
+
+  if (imageDataUrl) {
+    downloadImage(imageDataUrl, 'poster.jpg');
+  }
+};
+
+// WebP 格式（现代浏览器，平衡质量和大小）
+const exportAsWebP = async () => {
+  const imageDataUrl = await kitBoxRef.current?.createPoster({
+    format: 'image/webp',
+    quality: 0.85,
+    backgroundColor: '#f5f5f5',
+  });
+
+  if (imageDataUrl) {
+    downloadImage(imageDataUrl, 'poster.webp');
+  }
+};
+
+function downloadImage(dataUrl: string, filename: string) {
+  const link = document.createElement('a');
+  link.href = dataUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+```
+
+### 2. 自定义尺寸导出
+
+```ts
+// 社交媒体尺寸预设
+const socialMediaSizes = {
+  instagram: { width: 1080, height: 1080 },
+  instagramStory: { width: 1080, height: 1920 },
+  facebook: { width: 1200, height: 630 },
+  twitter: { width: 1024, height: 512 },
+  linkedin: { width: 1200, height: 627 },
+  youtube: { width: 1280, height: 720 },
+  wechat: { width: 900, height: 500 }
+};
+
+const exportForSocialMedia = async (platform: keyof typeof socialMediaSizes) => {
+  const size = socialMediaSizes[platform];
+
+  try {
+    const imageDataUrl = await kitBoxRef.current?.createPoster({
+      format: 'image/jpeg',
+      quality: 0.9,
+      width: size.width,
+      height: size.height,
+      backgroundColor: '#ffffff'
+    });
+
+    if (imageDataUrl) {
+      downloadImage(imageDataUrl, \`poster-\${platform}.jpg\`);
+      console.log(\`\${platform} 格式导出成功: \${size.width}x\${size.height}\`);
+    }
+  } catch (error) {
+    console.error(\`\${platform} 导出失败:\`, error);
+  }
+};
+
+// 使用示例
+const handleExportInstagram = () => exportForSocialMedia('instagram');
+const handleExportStory = () => exportForSocialMedia('instagramStory');
+```
+
+### 3. 高分辨率导出
+
+```ts
+// 高分辨率导出（2倍、3倍分辨率）
+const exportHighResolution = async (scale: number = 2) => {
+  const originalWidth = 1080;
+  const originalHeight = 1920;
+
+  try {
+    const imageDataUrl = await kitBoxRef.current?.createPoster({
+      format: 'image/png',
+      width: originalWidth * scale,
+      height: originalHeight * scale,
+      dpi: 72 * scale, // 相应提高 DPI
+      backgroundColor: 'transparent'
+    });
+
+    if (imageDataUrl) {
+      downloadImage(imageDataUrl, \`poster-\${scale}x.png\`);
+      console.log(\`\${scale}x 分辨率导出成功: \${originalWidth * scale}x\${originalHeight * scale}\`);
+    }
+  } catch (error) {
+    console.error(\`\${scale}x 分辨率导出失败:\`, error);
+  }
+};
+
+// 打印质量导出（300 DPI）
+const exportForPrint = async () => {
+  try {
+    // 计算打印尺寸（假设 A4 纸张：210mm x 297mm）
+    const dpi = 300;
+    const a4WidthInch = 8.27; // 210mm in inches
+    const a4HeightInch = 11.69; // 297mm in inches
+
+    const printWidth = Math.round(a4WidthInch * dpi);
+    const printHeight = Math.round(a4HeightInch * dpi);
+
+    const imageDataUrl = await kitBoxRef.current?.createPoster({
+      format: 'image/png',
+      width: printWidth,
+      height: printHeight,
+      dpi: dpi,
+      backgroundColor: '#ffffff'
+    });
+
+    if (imageDataUrl) {
+      downloadImage(imageDataUrl, \`poster-print-\${printWidth}x\${printHeight}.png\`);
+      console.log(\`打印质量导出成功: \${printWidth}x\${printHeight} @ \${dpi}DPI\`);
+    }
+  } catch (error) {
+    console.error('打印质量导出失败:', error);
+  }
+};
+```
+
+### 4. 批量导出
+
+```tsx
+import { useState } from 'react';
+
+const BatchExporter = () => {
+  const kitBoxRef = useRef<ComponentRef<typeof KitBox>>(null);
+  const [exportProgress, setExportProgress] = useState(0);
+  const [isExporting, setIsExporting] = useState(false);
+
+  // 批量导出多种格式
+  const batchExport = async () => {
+    if (!kitBoxRef.current) return;
+
+    setIsExporting(true);
+    setExportProgress(0);
+
+    const exportTasks = [
+      {
+        name: 'PNG原图',
+        options: { format: 'image/png' as const, backgroundColor: 'transparent' },
+        filename: 'poster-original.png'
+      },
+      {
+        name: 'JPEG高质量',
+        options: { format: 'image/jpeg' as const, quality: 0.95, backgroundColor: '#ffffff' },
+        filename: 'poster-hq.jpg'
+      },
+      {
+        name: 'Instagram正方形',
+        options: {
+          format: 'image/jpeg' as const,
+          quality: 0.9,
+          width: 1080,
+          height: 1080,
+          backgroundColor: '#ffffff'
+        },
+        filename: 'poster-instagram.jpg'
+      },
+      {
+        name: '微信朋友圈',
+        options: {
+          format: 'image/jpeg' as const,
+          quality: 0.85,
+          width: 900,
+          height: 500,
+          backgroundColor: '#ffffff'
+        },
+        filename: 'poster-wechat.jpg'
+      },
+      {
+        name: '高分辨率2x',
+        options: {
+          format: 'image/png' as const,
+          width: 2160,
+          height: 3840,
+          backgroundColor: 'transparent'
+        },
+        filename: 'poster-2x.png'
+      }
+    ];
+
+    try {
+      for (let i = 0; i < exportTasks.length; i++) {
+        const task = exportTasks[i];
+        console.log(\`正在导出: \${task.name}\`);
+
+        const imageDataUrl = await kitBoxRef.current.createPoster(task.options);
+
+        if (imageDataUrl) {
+          downloadImage(imageDataUrl, task.filename);
+          console.log(\`\${task.name} 导出完成\`);
+        }
+
+        setExportProgress(((i + 1) / exportTasks.length) * 100);
+
+        // 小延迟避免浏览器卡死
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+
+      console.log('批量导出完成！');
+    } catch (error) {
+      console.error('批量导出失败:', error);
+    } finally {
+      setIsExporting(false);
+      setExportProgress(0);
+    }
+  };
+
+  return (
+    <div className="batch-exporter">
+      <button
+        onClick={batchExport}
+        disabled={isExporting}
+        className="export-button"
+      >
+        {isExporting ? '导出中...' : '批量导出'}
+      </button>
+
+      {isExporting && (
+        <div className="progress">
+          <div className="progress-bar">
+            <div
+              className="progress-fill"
+              style={{ width: \`\${exportProgress}%\` }}
+            />
+          </div>
+          <span className="progress-text">{Math.round(exportProgress)}%</span>
+        </div>
+      )}
+    </div>
+  );
+};
+```
+
+### 5. 预览和确认
+
+```tsx
+const ExportPreview = () => {
+  const kitBoxRef = useRef<ComponentRef<typeof KitBox>>(null);
+  const [previewUrl, setPreviewUrl] = useState<string>('');
+  const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
+
+  // 生成预览
+  const generatePreview = async () => {
+    if (!kitBoxRef.current) return;
+
+    setIsGeneratingPreview(true);
+
+    try {
+      // 生成小尺寸预览图
+      const previewDataUrl = await kitBoxRef.current.createPoster({
+        format: 'image/jpeg',
+        quality: 0.7,
+        width: 540, // 原尺寸的一半
+        height: 960,
+        backgroundColor: '#ffffff'
+      });
+
+      if (previewDataUrl) {
+        setPreviewUrl(previewDataUrl);
+      }
+    } catch (error) {
+      console.error('生成预览失败:', error);
+    } finally {
+      setIsGeneratingPreview(false);
+    }
+  };
+
+  // 确认导出
+  const confirmExport = async () => {
+    if (!kitBoxRef.current) return;
+
+    try {
+      const finalDataUrl = await kitBoxRef.current.createPoster({
+        format: 'image/png',
+        backgroundColor: 'transparent'
+      });
+
+      if (finalDataUrl) {
+        downloadImage(finalDataUrl, \`poster-final-\${Date.now()}.png\`);
+        setPreviewUrl(''); // 清除预览
+      }
+    } catch (error) {
+      console.error('最终导出失败:', error);
+    }
+  };
+
+  return (
+    <div className="export-preview">
+      <div className="preview-controls">
+        <button onClick={generatePreview} disabled={isGeneratingPreview}>
+          {isGeneratingPreview ? '生成中...' : '生成预览'}
+        </button>
+
+        {previewUrl && (
+          <button onClick={confirmExport} className="confirm-export">
+            确认导出
+          </button>
+        )}
+      </div>
+
+      {previewUrl && (
+        <div className="preview-container">
+          <h3>导出预览</h3>
+          <img
+            src={previewUrl}
+            alt="导出预览"
+            className="preview-image"
+            style={{ maxWidth: '300px', border: '1px solid #ddd' }}
+          />
+          <p className="preview-note">
+            预览图为缩小版本，实际导出将为原始分辨率
+          </p>
+        </div>
+      )}
+    </div>
+  );
+};
+```
+
+### 6. 水印和装饰
+
+```ts
+// 添加水印的导出
+const exportWithWatermark = async () => {
+  try {
+    // 首先导出原始图片
+    const originalDataUrl = await kitBoxRef.current?.createPoster({
+      format: 'image/png',
+      backgroundColor: 'transparent'
+    });
+
+    if (!originalDataUrl) return;
+
+    // 创建 Canvas 添加水印
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    if (!ctx) return;
+
+    // 设置画布尺寸
+    canvas.width = 1080;
+    canvas.height = 1920;
+
+    // 加载原始图片
+    const img = new Image();
+    img.onload = () => {
+      // 绘制原始图片
+      ctx.drawImage(img, 0, 0);
+
+      // 添加水印
+      ctx.save();
+      ctx.globalAlpha = 0.3;
+      ctx.fillStyle = '#000000';
+      ctx.font = '24px Arial';
+      ctx.textAlign = 'right';
+      ctx.fillText('Created with PosterKit', canvas.width - 20, canvas.height - 20);
+      ctx.restore();
+
+      // 导出带水印的图片
+      const watermarkedDataUrl = canvas.toDataURL('image/png');
+      downloadImage(watermarkedDataUrl, \`poster-watermarked-\${Date.now()}.png\`);
+    };
+
+    img.src = originalDataUrl;
+  } catch (error) {
+    console.error('水印导出失败:', error);
+  }
+};
+
+// 添加边框装饰的导出
+const exportWithBorder = async (borderWidth: number = 20, borderColor: string = '#000000') => {
+  try {
+    const originalDataUrl = await kitBoxRef.current?.createPoster({
+      format: 'image/png',
+      backgroundColor: 'transparent'
+    });
+
+    if (!originalDataUrl) return;
+
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    if (!ctx) return;
+
+    // 设置带边框的画布尺寸
+    canvas.width = 1080 + borderWidth * 2;
+    canvas.height = 1920 + borderWidth * 2;
+
+    // 绘制边框
+    ctx.fillStyle = borderColor;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // 加载并绘制原始图片
+    const img = new Image();
+    img.onload = () => {
+      ctx.drawImage(img, borderWidth, borderWidth);
+
+      const borderedDataUrl = canvas.toDataURL('image/png');
+      downloadImage(borderedDataUrl, \`poster-bordered-\${Date.now()}.png\`);
+    };
+
+    img.src = originalDataUrl;
+  } catch (error) {
+    console.error('边框导出失败:', error);
+  }
+};
+```
+
+## 性能优化
+
+### 1. 缓存和复用
+
+```ts
+class PosterExportCache {
+  private cache = new Map<string, string>();
+  private cacheKeys = new Set<string>();
+
+  // 生成缓存键
+  private generateCacheKey(options: CreatePosterOptions = {}) {
+    return JSON.stringify({
+      format: options.format || 'image/png',
+      quality: options.quality || 0.9,
+      width: options.width,
+      height: options.height,
+      backgroundColor: options.backgroundColor,
+      timestamp: Math.floor(Date.now() / 60000), // 1分钟内复用
+    });
+  }
+
+  async getCachedPoster(kitBoxRef: any, options?: CreatePosterOptions) {
+    const cacheKey = this.generateCacheKey(options);
+
+    // 检查缓存
+    if (this.cache.has(cacheKey)) {
+      console.log('使用缓存的海报');
+      return this.cache.get(cacheKey)!;
+    }
+
+    // 生成新的海报
+    const dataUrl = await kitBoxRef.current?.createPoster(options);
+
+    if (dataUrl) {
+      // 限制缓存大小
+      if (this.cache.size >= 10) {
+        const oldestKey = this.cacheKeys.values().next().value;
+        this.cache.delete(oldestKey);
+        this.cacheKeys.delete(oldestKey);
+      }
+
+      this.cache.set(cacheKey, dataUrl);
+      this.cacheKeys.add(cacheKey);
+    }
+
+    return dataUrl;
+  }
+
+  clearCache() {
+    this.cache.clear();
+    this.cacheKeys.clear();
+  }
+}
+
+const exportCache = new PosterExportCache();
+
+const cachedExport = async () => {
+  const dataUrl = await exportCache.getCachedPoster(kitBoxRef, {
+    format: 'image/jpeg',
+    quality: 0.9,
+  });
+
+  if (dataUrl) {
+    downloadImage(dataUrl, 'cached-poster.jpg');
+  }
+};
+```
+
+### 2. 压缩优化
+
+```ts
+// 智能质量调整
+const exportWithOptimalQuality = async (targetSizeKB: number = 500) => {
+  let quality = 0.9;
+  let attempts = 0;
+  const maxAttempts = 5;
+
+  while (attempts < maxAttempts) {
+    try {
+      const dataUrl = await kitBoxRef.current?.createPoster({
+        format: 'image/jpeg',
+        quality: quality,
+        backgroundColor: '#ffffff'
+      });
+
+      if (!dataUrl) break;
+
+      // 计算文件大小（base64 解码后的大小）
+      const base64Data = dataUrl.split(',')[1];
+      const sizeKB = (base64Data.length * 3) / 4 / 1024;
+
+      console.log(\`质量 \${quality.toFixed(2)}, 大小: \${sizeKB.toFixed(1)}KB\`);
+
+      if (sizeKB <= targetSizeKB || quality <= 0.1) {
+        downloadImage(dataUrl, \`poster-optimized-\${sizeKB.toFixed(0)}kb.jpg\`);
+        console.log(\`优化完成，最终质量: \${quality.toFixed(2)}, 大小: \${sizeKB.toFixed(1)}KB\`);
+        break;
+      }
+
+      // 调整质量
+      quality = Math.max(0.1, quality - 0.2);
+      attempts++;
+    } catch (error) {
+      console.error('优化导出失败:', error);
+      break;
+    }
+  }
+};
+```
+
+## 错误处理
+
+```ts
+const robustExport = async (options?: CreatePosterOptions) => {
+  try {
+    // 检查组件是否可用
+    if (!kitBoxRef.current) {
+      throw new Error('PosterKit 组件未初始化');
+    }
+
+    // 验证选项
+    if (options?.quality && (options.quality < 0 || options.quality > 1)) {
+      throw new Error('质量参数必须在 0-1 之间');
+    }
+
+    if (options?.width && options.width <= 0) {
+      throw new Error('宽度必须大于 0');
+    }
+
+    if (options?.height && options.height <= 0) {
+      throw new Error('高度必须大于 0');
+    }
+
+    // 执行导出
+    const dataUrl = await kitBoxRef.current.createPoster(options);
+
+    if (!dataUrl) {
+      throw new Error('导出失败，未生成图片数据');
+    }
+
+    // 验证数据URL格式
+    if (!dataUrl.startsWith('data:image/')) {
+      throw new Error('导出数据格式无效');
+    }
+
+    return dataUrl;
+  } catch (error) {
+    console.error('海报导出错误:', error);
+
+    // 显示用户友好的错误信息
+    if (error instanceof Error) {
+      alert(\`导出失败: \${error.message}\`);
+    } else {
+      alert('导出失败，请稍后重试');
+    }
+
+    throw error;
+  }
+};
+```
+
+## 注意事项
+
+### 1. 浏览器兼容性
+
+- **WebP 格式**: 需要现代浏览器支持
+- **高分辨率**: 可能受浏览器内存限制
+- **文件大小**: 大图片可能导致浏览器卡顿
+
+### 2. 性能考虑
+
+- 高分辨率导出会消耗更多内存和时间
+- 建议为大尺寸导出添加进度指示
+- 避免频繁调用，可以实现防抖
+
+### 3. 格式选择
+
+- **PNG**: 支持透明，无损压缩，文件较大
+- **JPEG**: 不支持透明，有损压缩，文件较小
+- **WebP**: 现代格式，压缩效果好，兼容性有限
+
+## 相关 API
+
+- [`getDomList()`](./getDomList) - 获取卡片数据列表
+- [`init()`](./init) - 初始化画布数据
+- [`add()`](./add) - 添加新卡片

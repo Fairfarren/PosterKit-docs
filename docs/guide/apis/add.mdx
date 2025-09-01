@@ -1,39 +1,573 @@
-# 插入元素
+# 添加卡片方法 add()
 
-## add()
+`add()` 方法用于向画布中添加单个卡片元素，支持图片和文本两种类型。
 
-`init`方法接受一个对象，类型为`CardData`
+## 方法签名
 
-```tsx
-kitBoxRef.add({} as CardData)
+```ts
+async add(data: CardData): Promise<void>
 ```
 
+## 参数说明
 
-### [CardData](./type)
+- **data**
+  - 类型: `CardData`
+  - 必填: ✅
+  - 说明: 要添加的卡片数据，可以是图片卡片或文本卡片
 
+详细的 `CardData` 类型定义请查看 [TypeScript 类型](./type)。
 
-## 示例
+## 基础用法
 
-```tsx
-<kitBox
-  ref={kitBoxRef}
-/>
-```
+### 添加文本卡片
 
-```tsx
-kitBoxRef.current?.add({
-  id: new Date().getTime() + 1,
-  width: 300,
-  height: 200,
-  x: 0,
-  y: 0,
-  text: '你好世界你好世界1234567890🤔abcdefghijklmnopqrstuvwxyz',
+```ts
+await kitBoxRef.current?.add({
+  id: 'text-' + Date.now(),
   type: 'text',
-  fontSize: 32,
-  fontFamily: 'cursive',
-  color: '#db3f9178',
-  fontWeight: 'bold',
-  fontStyle: 'italic',
-  decoration: 'line-through'
-})
+  text: '这是一段示例文本',
+  x: 100,
+  y: 100,
+  width: 300,
+  height: 100,
+  fontSize: 24,
+  fontFamily: 'Microsoft YaHei, sans-serif',
+  color: '#333333',
+  fontWeight: 'normal',
+  fontStyle: 'normal',
+  decoration: 'none',
+});
 ```
+
+### 添加图片卡片
+
+```ts
+// 方式一：使用图片 URL
+await kitBoxRef.current?.add({
+  id: 'image-' + Date.now(),
+  type: 'image',
+  src: 'https://example.com/image.jpg',
+  x: 200,
+  y: 200,
+  width: 400,
+  height: 300,
+});
+
+// 方式二：使用 Image 对象
+const image = new Image();
+image.crossOrigin = 'anonymous';
+image.src = 'https://example.com/image.jpg';
+image.onload = async () => {
+  await kitBoxRef.current?.add({
+    id: 'image-' + Date.now(),
+    type: 'image',
+    image: image,
+    x: 200,
+    y: 200,
+    width: 400,
+    height: 300,
+  });
+};
+```
+
+## 完整示例
+
+### React 中使用
+
+```tsx
+import { useRef, useState } from 'react';
+import { KitBox } from 'poster-kit/dist/react/components.ts';
+import type { CardData } from 'poster-kit';
+
+const PosterEditor = () => {
+  const kitBoxRef = useRef<ComponentRef<typeof KitBox>>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // 添加标题文本
+  const addTitle = async () => {
+    setIsLoading(true);
+    try {
+      await kitBoxRef.current?.add({
+        id: `title-${Date.now()}`,
+        type: 'text',
+        text: '海报标题',
+        x: 50,
+        y: 50,
+        width: 980,
+        height: 120,
+        fontSize: 48,
+        fontFamily: 'Microsoft YaHei, sans-serif',
+        color: '#2c3e50',
+        fontWeight: 'bold',
+        fontStyle: 'normal',
+        decoration: 'none',
+      });
+      console.log('标题添加成功');
+    } catch (error) {
+      console.error('添加标题失败:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 添加描述文本
+  const addDescription = async () => {
+    setIsLoading(true);
+    try {
+      await kitBoxRef.current?.add({
+        id: `desc-${Date.now()}`,
+        type: 'text',
+        text: '这里是详细的描述信息，可以包含多行内容。\n支持换行显示，非常适合长文本内容。',
+        x: 50,
+        y: 200,
+        width: 980,
+        height: 200,
+        fontSize: 18,
+        fontFamily: 'Arial, sans-serif',
+        color: '#666666',
+        fontWeight: 'normal',
+        fontStyle: 'normal',
+        decoration: 'none',
+      });
+      console.log('描述添加成功');
+    } catch (error) {
+      console.error('添加描述失败:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 添加背景图片
+  const addBackgroundImage = async (imageUrl: string) => {
+    setIsLoading(true);
+    try {
+      // 预加载图片
+      const img = await loadImage(imageUrl);
+
+      await kitBoxRef.current?.add({
+        id: `bg-${Date.now()}`,
+        type: 'image',
+        image: img,
+        x: 0,
+        y: 0,
+        width: 1080,
+        height: 1920,
+      });
+      console.log('背景图片添加成功');
+    } catch (error) {
+      console.error('添加背景图片失败:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 图片预加载工具函数
+  const loadImage = (src: string): Promise<HTMLImageElement> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
+      img.src = src;
+    });
+  };
+
+  return (
+    <div className="editor">
+      <div className="toolbar">
+        <button onClick={addTitle} disabled={isLoading}>
+          添加标题
+        </button>
+        <button onClick={addDescription} disabled={isLoading}>
+          添加描述
+        </button>
+        <button
+          onClick={() => addBackgroundImage('https://example.com/bg.jpg')}
+          disabled={isLoading}
+        >
+          添加背景
+        </button>
+      </div>
+
+      <KitBox ref={kitBoxRef} width={1080} height={1920} />
+    </div>
+  );
+};
+```
+
+### Vue 中使用
+
+```vue
+<template>
+  <div class="editor">
+    <div class="toolbar">
+      <button @click="addTitle" :disabled="isLoading">添加标题</button>
+      <button @click="addDescription" :disabled="isLoading">添加描述</button>
+      <button @click="addProductImage" :disabled="isLoading">添加产品图</button>
+    </div>
+
+    <kit-box ref="kitBoxRef" :width="1080" :height="1920" />
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue';
+import type { CardData } from 'poster-kit';
+
+const kitBoxRef = ref<HTMLKitBoxElement | null>(null);
+const isLoading = ref(false);
+
+// 添加标题
+async function addTitle() {
+  if (!kitBoxRef.value) return;
+
+  isLoading.value = true;
+  try {
+    await kitBoxRef.value.add({
+      id: `title-${Date.now()}`,
+      type: 'text',
+      text: '产品促销',
+      x: 100,
+      y: 100,
+      width: 880,
+      height: 100,
+      fontSize: 42,
+      fontFamily: 'Microsoft YaHei, sans-serif',
+      color: '#e74c3c',
+      fontWeight: 'bold',
+      fontStyle: 'normal',
+      decoration: 'none',
+    });
+  } catch (error) {
+    console.error('添加标题失败:', error);
+  } finally {
+    isLoading.value = false;
+  }
+}
+
+// 添加描述
+async function addDescription() {
+  if (!kitBoxRef.value) return;
+
+  isLoading.value = true;
+  try {
+    await kitBoxRef.value.add({
+      id: `desc-${Date.now()}`,
+      type: 'text',
+      text: '限时特惠，机不可失！\n立即购买享受超值优惠',
+      x: 100,
+      y: 250,
+      width: 880,
+      height: 120,
+      fontSize: 24,
+      fontFamily: 'Arial, sans-serif',
+      color: '#2c3e50',
+      fontWeight: 'normal',
+      fontStyle: 'normal',
+      decoration: 'none',
+    });
+  } catch (error) {
+    console.error('添加描述失败:', error);
+  } finally {
+    isLoading.value = false;
+  }
+}
+
+// 添加产品图片
+async function addProductImage() {
+  if (!kitBoxRef.value) return;
+
+  isLoading.value = true;
+  try {
+    const imageUrl =
+      'https://via.placeholder.com/600x400/3498db/ffffff?text=Product';
+    const img = await loadImage(imageUrl);
+
+    await kitBoxRef.value.add({
+      id: `product-${Date.now()}`,
+      type: 'image',
+      image: img,
+      x: 240,
+      y: 400,
+      width: 600,
+      height: 400,
+    });
+  } catch (error) {
+    console.error('添加产品图片失败:', error);
+  } finally {
+    isLoading.value = false;
+  }
+}
+
+// 图片加载工具
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error(`图片加载失败: ${src}`));
+    img.src = src;
+  });
+}
+</script>
+```
+
+### 原生 JavaScript 使用
+
+```html
+<div class="editor">
+  <div class="toolbar">
+    <button onclick="addTextCard()">添加文本</button>
+    <button onclick="addImageCard()">添加图片</button>
+    <button onclick="addQuickTemplate()">快速模板</button>
+  </div>
+
+  <kit-box id="poster-editor" width="1080" height="1920"></kit-box>
+</div>
+
+<script>
+  const kitBox = document.getElementById('poster-editor');
+
+  // 添加文本卡片
+  async function addTextCard() {
+    try {
+      await kitBox.add({
+        id: 'text-' + Date.now(),
+        type: 'text',
+        text: '点击编辑文本内容',
+        x: Math.random() * 500 + 50,
+        y: Math.random() * 500 + 50,
+        width: 400,
+        height: 80,
+        fontSize: 28,
+        fontFamily: 'Arial, sans-serif',
+        color: '#333333',
+        fontWeight: 'normal',
+        fontStyle: 'normal',
+        decoration: 'none',
+      });
+      console.log('文本卡片添加成功');
+    } catch (error) {
+      console.error('添加文本卡片失败:', error);
+    }
+  }
+
+  // 添加图片卡片
+  async function addImageCard() {
+    try {
+      const imageUrl =
+        'https://via.placeholder.com/300x200/27ae60/ffffff?text=New+Image';
+
+      await kitBox.add({
+        id: 'image-' + Date.now(),
+        type: 'image',
+        src: imageUrl,
+        x: Math.random() * 400 + 50,
+        y: Math.random() * 400 + 50,
+        width: 300,
+        height: 200,
+      });
+      console.log('图片卡片添加成功');
+    } catch (error) {
+      console.error('添加图片卡片失败:', error);
+    }
+  }
+
+  // 添加快速模板
+  async function addQuickTemplate() {
+    const cards = [
+      {
+        id: 'template-title',
+        type: 'text',
+        text: '特惠活动',
+        x: 50,
+        y: 50,
+        width: 980,
+        height: 100,
+        fontSize: 48,
+        fontFamily: 'Microsoft YaHei, sans-serif',
+        color: '#e74c3c',
+        fontWeight: 'bold',
+        fontStyle: 'normal',
+        decoration: 'none',
+      },
+      {
+        id: 'template-subtitle',
+        type: 'text',
+        text: '限时优惠，不容错过！',
+        x: 50,
+        y: 180,
+        width: 980,
+        height: 60,
+        fontSize: 24,
+        fontFamily: 'Arial, sans-serif',
+        color: '#2c3e50',
+        fontWeight: 'normal',
+        fontStyle: 'italic',
+        decoration: 'none',
+      },
+    ];
+
+    try {
+      for (const card of cards) {
+        await kitBox.add(card);
+      }
+      console.log('快速模板添加完成');
+    } catch (error) {
+      console.error('添加快速模板失败:', error);
+    }
+  }
+</script>
+```
+
+## 高级用法
+
+### 批量添加卡片
+
+```ts
+const batchAddCards = async (cards: CardData[]) => {
+  const promises = cards.map((card) => kitBoxRef.current?.add(card));
+
+  try {
+    await Promise.all(promises);
+    console.log('批量添加成功');
+  } catch (error) {
+    console.error('批量添加失败:', error);
+  }
+};
+
+// 使用示例
+const cards: CardData[] = [
+  {
+    id: 'card-1',
+    type: 'text',
+    text: '卡片1',
+    x: 100,
+    y: 100,
+    width: 200,
+    height: 50,
+    fontSize: 18,
+    fontFamily: 'Arial',
+    color: '#333',
+    fontWeight: 'normal',
+    fontStyle: 'normal',
+    decoration: 'none',
+  },
+  {
+    id: 'card-2',
+    type: 'text',
+    text: '卡片2',
+    x: 100,
+    y: 200,
+    width: 200,
+    height: 50,
+    fontSize: 18,
+    fontFamily: 'Arial',
+    color: '#333',
+    fontWeight: 'normal',
+    fontStyle: 'normal',
+    decoration: 'none',
+  },
+];
+
+await batchAddCards(cards);
+```
+
+### 智能位置计算
+
+```ts
+const addCardWithSmartPosition = async (cardType: 'text' | 'image') => {
+  // 获取当前所有卡片
+  const existingCards = (await kitBoxRef.current?.getDomList()) || [];
+
+  // 计算新位置，避免重叠
+  let newX = 50;
+  let newY = 50;
+
+  // 简单的位置算法：寻找空白区域
+  const occupiedAreas = existingCards.map((card) => ({
+    x: card.x,
+    y: card.y,
+    width: card.width,
+    height: card.height,
+  }));
+
+  // 这里可以实现更复杂的位置计算逻辑
+  // 简单示例：依次向右下方偏移
+  if (occupiedAreas.length > 0) {
+    newX = 50 + (occupiedAreas.length % 3) * 300;
+    newY = 50 + Math.floor(occupiedAreas.length / 3) * 200;
+  }
+
+  const newCard: CardData =
+    cardType === 'text'
+      ? {
+          id: `text-${Date.now()}`,
+          type: 'text',
+          text: '新文本',
+          x: newX,
+          y: newY,
+          width: 250,
+          height: 80,
+          fontSize: 24,
+          fontFamily: 'Arial',
+          color: '#333333',
+          fontWeight: 'normal',
+          fontStyle: 'normal',
+          decoration: 'none',
+        }
+      : {
+          id: `image-${Date.now()}`,
+          type: 'image',
+          src: 'https://via.placeholder.com/200x150',
+          x: newX,
+          y: newY,
+          width: 200,
+          height: 150,
+        };
+
+  await kitBoxRef.current?.add(newCard);
+};
+```
+
+## 注意事项
+
+### 1. 图片加载
+
+使用图片 URL 时，确保图片可访问且支持跨域：
+
+```ts
+// 设置跨域属性
+const img = new Image();
+img.crossOrigin = 'anonymous';
+img.src = imageUrl;
+```
+
+### 2. ID 唯一性
+
+确保每个卡片的 ID 都是唯一的：
+
+```ts
+// 推荐使用时间戳 + 随机数
+const generateUniqueId = (type: string) => {
+  return `${type}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+};
+```
+
+### 3. 异步操作
+
+`add()` 是异步方法，需要正确处理：
+
+```ts
+// ✅ 正确
+await kitBoxRef.current?.add(cardData);
+
+// ❌ 错误 - 没有等待
+kitBoxRef.current?.add(cardData);
+```
+
+## 相关方法
+
+- [`init()`](./init) - 初始化编辑器
+- [`updateCurrentData()`](./updateCurrentData) - 更新卡片数据
+- [`getDomList()`](./getDomList) - 获取所有卡片
